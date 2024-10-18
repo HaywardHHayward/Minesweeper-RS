@@ -6,5 +6,11 @@
     <inspection_tool class="CppTooWideScopeInitStatement" enabled="false" level="HINT" enabled_by_default="false" />
     <inspection_tool class="CppUnnecessaryWhitespace" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="InconsistentLineSeparators" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="RsAssociatedTypeMismatch" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="RsExperimentalChecks" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="RsExperimentalTraitObligations" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="RsExperimentalTypeCheck" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="RsExperimentalUnresolvedMethod" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="RsExperimentalUnresolvedPath" enabled="true" level="ERROR" enabled_by_default="true" />
   </profile>
 </component>
