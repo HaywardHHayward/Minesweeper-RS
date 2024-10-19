@@ -146,7 +146,7 @@ impl TryFrom<u8> for SurroundingMines {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]

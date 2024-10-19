@@ -1,1 +1,2 @@
-mod mineswepeer_core;
+mod minesweeper_core;
+pub use minesweeper_core::*;
