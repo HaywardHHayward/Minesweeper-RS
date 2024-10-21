@@ -79,25 +79,25 @@ impl Tile {
             }
         }
     }
-    pub fn is_open(&self) -> bool {
+    pub const fn is_open(&self) -> bool {
         matches!(self.tile_state, TileState::Opened)
     }
     pub fn open(&mut self) {
         self.transition(Transition::Open);
     }
-    pub fn is_flagged(&self) -> bool {
+    pub const fn is_flagged(&self) -> bool {
         matches!(self.tile_state, TileState::Unopened { is_flagged: true })
     }
     pub fn toggle_flag(&mut self) {
         self.transition(Transition::ToggleFlag);
     }
-    pub fn is_mined(&self) -> bool {
+    pub const fn is_mined(&self) -> bool {
         matches!(self.mine_state, MinedState::Mined)
     }
     pub fn become_mined(&mut self) {
         self.transition(Transition::BecomeMined);
     }
-    pub fn surrounding_mines(&self) -> Option<u8> {
+    pub const fn surrounding_mines(&self) -> Option<u8> {
         if let MinedState::Safe { surrounding_mines } = self.mine_state {
             Some(surrounding_mines as u8)
         } else {
