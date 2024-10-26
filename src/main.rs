@@ -1,8 +1,11 @@
 use minesweeper_rs::*;
-fn main() {
+fn main() -> iced::Result {
     let mut board = Board::build(10, 10, 10).unwrap();
     board.check_tile(0, 0);
     print_board(&board);
+    iced::application("Minesweeper", update, view)
+        .centered()
+        .run()
 }
 
 fn print_board(board: &Board) {
