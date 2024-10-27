@@ -2,9 +2,9 @@ use iced::Task;
 use minesweeper_rs::*;
 fn main() -> iced::Result {
     let mut board = Board::build(10, 10, 10).unwrap();
-    board.check_tile(0, 0);
+    board.open_tile(0, 0);
     print_board(&board);
-    iced::application("Minesweeper", update, view)
+    iced::application("Minesweeper", MinesweeperApp::update, MinesweeperApp::view)
         .centered()
         .run()
 }

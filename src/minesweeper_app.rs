@@ -1,43 +1,42 @@
 use iced::{widget::*, *};
 
-use crate::Board;
+use crate::minesweeper_app::game_screen::*;
 
-#[derive(Default)]
-pub struct MinesweeperState {
-    board: Option<Board>,
-}
-type State = MinesweeperState;
-type Message = ();
+mod game_screen;
 
-pub fn update(state: &mut State, message: Message) -> impl Into<Task<Message>> {
-    if state.board.is_none() {
-        state.board = Board::build(10, 10, 10).ok()
-    }
+pub struct MinesweeperApp {
+    current_screen: Box<dyn Screen>,
 }
 
-pub fn view(state: &State) -> impl Into<Element<Message>> {
-    if state.board.is_some() {
-        center(
-            widget::column![board_ui(state).into(), Button::new("Hello").on_press(())]
-                .align_x(Alignment::Center),
-        )
-    } else {
-        center(widget::column![
-            widget::text!("minesweeper"),
-            Button::new("Hello").on_press(())
-        ])
-    }
-}
-
-fn board_ui(state: &State) -> impl Into<Element<Message>> {
-    let board = state.board.as_ref().unwrap();
-    let mut grid = Row::with_capacity(board.width() as usize).spacing(2);
-    for x in 0..board.width() {
-        let mut column = Column::with_capacity(board.height() as usize);
-        for y in 0..board.height() {
-            column = column.push(text!("{} {}", x, y))
+impl Default for MinesweeperApp {
+    fn default() -> Self {
+        Self {
+            current_screen: Box::new(GameScreen::new(10, 10, 10)),
         }
-        grid = grid.push(column);
     }
-    grid
+}
+
+enum AppScreen {
+    GameScreen(GameScreen),
+}
+
+trait Screen {
+    fn update(&mut self, message: Message) -> Task<Message>;
+    fn view(&self) -> Element<Message>;
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Message {
+    OpenTile(u8, u8),
+    FlagTile(u8, u8),
+    SafeOpenTile(u8, u8),
+}
+
+impl MinesweeperApp {
+    pub fn update(&mut self, message: Message) -> Task<Message> {
+        self.current_screen.update(message)
+    }
+    pub fn view(&self) -> Element<Message> {
+        self.current_screen.view()
+    }
 }

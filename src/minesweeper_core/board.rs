@@ -6,7 +6,7 @@ use std::{
 use crate::minesweeper_core::tile::*;
 
 enum BoardState {
-    FirstCheck,
+    FirstOpen,
     Playing,
     GameOver { hit_mine: bool },
 }
@@ -50,7 +50,7 @@ impl Board {
             height,
             mine_count,
             tiles,
-            state: BoardState::FirstCheck,
+            state: BoardState::FirstOpen,
             unopened_tiles,
             mined_tiles,
         })
@@ -105,7 +105,7 @@ impl Board {
         }
         neighbors
     }
-    pub fn check_tile(&mut self, x: u8, y: u8) {
+    pub fn open_tile(&mut self, x: u8, y: u8) {
         match self.get(x, y) {
             Some(tile) => {
                 if tile.is_flagged() || tile.is_open() {
@@ -114,7 +114,7 @@ impl Board {
             }
             None => return,
         }
-        if matches!(self.state, BoardState::FirstCheck) {
+        if matches!(self.state, BoardState::FirstOpen) {
             self.place_mines(x, y);
             self.state = BoardState::Playing;
         }
@@ -125,7 +125,7 @@ impl Board {
             if tile.surrounding_mines().unwrap() == 0 {
                 let neighbors = self.neighbor_coords(x, y);
                 for neighbor in neighbors {
-                    self.check_tile(neighbor.0, neighbor.1);
+                    self.open_tile(neighbor.0, neighbor.1);
                 }
             }
         } else {
@@ -174,7 +174,7 @@ impl Board {
                 .increment_surrounding();
         }
     }
-    pub fn check_safe(&mut self, x: u8, y: u8) {
+    pub fn open_safe(&mut self, x: u8, y: u8) {
         match self.get(x, y) {
             Some(tile) => {
                 if !tile.is_open() {
@@ -192,11 +192,11 @@ impl Board {
             .into_iter()
             .filter(|(tile_x, tile_y)| !self.get(*tile_x, *tile_y).unwrap().is_open())
             .partition(|(tile_x, tile_y)| self.get(*tile_x, *tile_y).unwrap().is_flagged());
-        if flagged.len() != self.mine_count() as usize {
+        if flagged.len() != self.get(x, y).unwrap().surrounding_mines().unwrap() as usize {
             return;
         }
         for (tile_x, tile_y) in unflagged {
-            self.check_tile(tile_x, tile_y);
+            self.open_tile(tile_x, tile_y);
         }
     }
     pub fn toggle_flag(&mut self, x: u8, y: u8) {
