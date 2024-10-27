@@ -1,3 +1,4 @@
+use iced::Task;
 use minesweeper_rs::*;
 fn main() -> iced::Result {
     let mut board = Board::build(10, 10, 10).unwrap();
