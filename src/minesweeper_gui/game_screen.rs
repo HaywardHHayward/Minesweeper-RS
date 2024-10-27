@@ -12,29 +12,32 @@ impl GameScreen {
             board: Board::build(width, height, mine_count).unwrap(),
         }
     }
+    fn display_tile(&self, x: u8, y: u8) -> impl Into<Element<Message>> {
+        let tile = self.board.get(x, y).unwrap();
+        let graphic = if !tile.is_open() {
+            if tile.is_flagged() {
+                " P".into()
+            } else {
+                "[]".into()
+            }
+        } else if tile.is_mined() {
+            " *".into()
+        } else {
+            let value = tile.surrounding_mines().unwrap();
+            if value == 0 {
+                "  ".into()
+            } else {
+                format!(" {}", value)
+            }
+        };
+        text!("{}", graphic)
+    }
     fn display_board(&self) -> impl Into<Element<Message>> {
         let mut row = Row::with_capacity(self.board.width() as usize).spacing(2);
         for x in 0..self.board.width() {
             let mut col = Column::with_capacity(self.board.height() as usize);
             for y in 0..self.board.height() {
-                let ref_tile = self.board.get(x, y).unwrap();
-                let message = if !ref_tile.is_open() {
-                    if ref_tile.is_flagged() {
-                        " P".into()
-                    } else {
-                        "[]".into()
-                    }
-                } else if ref_tile.is_mined() {
-                    " *".into()
-                } else {
-                    let value = ref_tile.surrounding_mines().unwrap();
-                    if value == 0 {
-                        "  ".into()
-                    } else {
-                        format!(" {}", value)
-                    }
-                };
-                let element = MouseArea::new(text!("{}", message))
+                let element = MouseArea::new(self.display_tile(x, y))
                     .on_press(Message::OpenTile(x, y))
                     .on_middle_press(Message::SafeOpenTile(x, y))
                     .on_right_press(Message::FlagTile(x, y));

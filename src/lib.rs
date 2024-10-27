@@ -1,4 +1,4 @@
-mod minesweeper_app;
 mod minesweeper_core;
-pub use minesweeper_app::*;
+mod minesweeper_gui;
 pub use minesweeper_core::*;
+pub use minesweeper_gui::*;
