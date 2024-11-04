@@ -11,5 +11,6 @@ edition = "2021"
 lto = "thin"
 
 [dependencies]
-rand = { version = "0.8.5", features = ["small_rng"] }
-iced = "0.13"
+rand = { version = "0.8", features = ["small_rng"] }
+iced = { version = "0.13", features = ["tokio"] }
+tokio = "1.41"

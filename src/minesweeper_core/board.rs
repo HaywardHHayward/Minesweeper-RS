@@ -80,6 +80,12 @@ impl Board {
     pub const fn mine_count(&self) -> u16 {
         self.mine_count.get()
     }
+    pub fn flag_count(&self) -> usize {
+        self.unopened_tiles
+            .iter()
+            .filter(|&coord| self.get(coord.0, coord.1).unwrap().is_flagged())
+            .count()
+    }
     fn neighbor_coords(&self, x: u8, y: u8) -> Vec<(u8, u8)> {
         if x >= self.width() || y >= self.height() {
             return Vec::new();
