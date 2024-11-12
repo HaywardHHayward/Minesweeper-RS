@@ -1,107 +1,153 @@
-use iced::{widget::*, *};
+use std::collections::HashMap;
 
-use crate::minesweeper_gui::{game_screen::*, main_menu::*};
+use iced::{widget::center, *};
 
 mod game_screen;
-mod main_menu;
+mod start_screen;
+
+trait Screen {
+    type ScreenMessage;
+    type ScreenAction;
+    fn update(&mut self, message: Self::ScreenMessage) -> Self::ScreenAction;
+    fn view(&self) -> Element<Self::ScreenMessage>;
+}
+
+enum ScreenData {
+    Game(game_screen::GameScreen),
+    Start(start_screen::StartScreen),
+}
+
+impl ScreenData {
+    fn view(&self) -> Element<Message> {
+        match self {
+            Self::Game(game_screen) => game_screen.view().map(Message::Game),
+            Self::Start(start_screen) => start_screen.view().map(Message::Start),
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
+enum ScreenChoice {
+    Game,
+    Start,
+}
+
+impl From<&ScreenData> for ScreenChoice {
+    fn from(screen_data: &ScreenData) -> Self {
+        match screen_data {
+            ScreenData::Game(_) => Self::Game,
+            ScreenData::Start(_) => Self::Start,
+        }
+    }
+}
+
+enum TimerStatus {
+    Running,
+    Stopped,
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum Message {
-    Game(GameMessage),
-    ChangeScreen(ScreenChoices),
-    ActivateTimer { start_time: time::Instant },
-    DeactivateTimer,
-    QueryingTime(time::Instant),
-}
-
-trait Screen {
-    fn update(&mut self, _message: Message) -> Task<Message> {
-        Task::none()
-    }
-    fn view(&self) -> Element<Message>;
-}
-
-#[repr(u8)]
-#[derive(Debug, Clone, Copy)]
-pub enum ScreenChoices {
-    Game,
-    StartMenu,
-}
-
-enum TimerState {
-    Inactive,
-    Active,
+    Game(game_screen::Message),
+    Start(start_screen::Message),
+    Exit,
 }
 
 pub struct MinesweeperApp {
-    current_screen: ScreenChoices,
-    screens: [Option<Box<dyn Screen>>; 2],
-    timer_state: TimerState,
+    screens: HashMap<ScreenChoice, ScreenData>,
+    current_screen: ScreenChoice,
+    timer_status: TimerStatus,
 }
 
 impl Default for MinesweeperApp {
     fn default() -> Self {
-        let screens: [Option<Box<dyn Screen>>; 2] = [
-            Some(Box::new(GameScreen::new(10, 10, 10))),
-            Some(Box::new(MainMenu::new())),
-        ];
+        let mut screens = HashMap::with_capacity(2);
+        screens.insert(
+            ScreenChoice::Start,
+            ScreenData::Start(start_screen::StartScreen::new()),
+        );
         Self {
-            current_screen: ScreenChoices::StartMenu,
             screens,
-            timer_state: TimerState::Inactive,
+            current_screen: ScreenChoice::Start,
+            timer_status: TimerStatus::Stopped,
         }
     }
 }
 
-const GAME_INDEX: usize = 0;
-const MAIN_MENU_INDEX: usize = 1;
-
 impl MinesweeperApp {
     pub fn update(&mut self, message: Message) -> Task<Message> {
+        assert!(
+            self.screens.contains_key(&self.current_screen),
+            "Current screen does not exist!"
+        );
         match message {
-            Message::ChangeScreen(change) => {
-                self.current_screen = change;
-                if let ScreenChoices::Game = change {
-                    return self.current_screen_mut().update(message).chain(Task::done(
-                        Message::ActivateTimer {
-                            start_time: time::Instant::now(),
-                        },
-                    ));
+            Message::Game(message) => {
+                let ScreenData::Game(game_screen) =
+                    self.screens.get_mut(&self.current_screen).unwrap()
+                else {
+                    return Task::none();
+                };
+                let action = game_screen.update(message);
+                match action {
+                    game_screen::Action::None => Task::none(),
                 }
             }
-            Message::ActivateTimer { .. } => {
-                self.timer_state = TimerState::Active;
+            Message::Start(message) => {
+                let ScreenData::Start(start_screen) =
+                    self.screens.get_mut(&self.current_screen).unwrap()
+                else {
+                    return Task::none();
+                };
+                let action = start_screen.update(message);
+                match action {
+                    start_screen::Action::None => Task::none(),
+                    start_screen::Action::MakeBoard {
+                        width,
+                        height,
+                        mines,
+                    } => {
+                        self.screens.insert(
+                            ScreenChoice::Game,
+                            ScreenData::Game(game_screen::GameScreen::new(width, height, mines)),
+                        );
+                        self.current_screen = ScreenChoice::Game;
+                        self.timer_status = TimerStatus::Running;
+                        Task::done(Message::Game(game_screen::Message::CurrentTime(
+                            time::Instant::now(),
+                        )))
+                    }
+                }
             }
-            Message::DeactivateTimer => {
-                self.timer_state = TimerState::Inactive;
-            }
-            Message::Game(GameMessage::GameFinished { .. }) => {
-                self.screens[GAME_INDEX] = Some(Box::new(GameScreen::new(10, 10, 10)));
-            }
-            _ => return self.current_screen_mut().update(message),
+            Message::Exit => exit(),
         }
-        self.current_screen_mut().update(message)
     }
     pub fn view(&self) -> Element<Message> {
-        self.current_screen().view()
+        self.screens.get(&self.current_screen).map_or(
+            center(widget::Text::new(
+                "Error! Current screen does not exist. If you are seeing this, something has gone wrong!",
+            )).into(),
+            |screen| screen.view(),
+        )
     }
     pub fn subscription(&self) -> Subscription<Message> {
-        if let TimerState::Active { .. } = self.timer_state {
-            time::every(time::Duration::from_secs(1)).map(Message::QueryingTime)
-        } else {
-            Subscription::none()
-        }
-    }
-    fn current_screen(&self) -> &dyn Screen {
-        match self.current_screen {
-            ScreenChoices::Game => self.screens[GAME_INDEX].as_deref().unwrap(),
-            ScreenChoices::StartMenu => self.screens[MAIN_MENU_INDEX].as_deref().unwrap(),
-        }
-    }
-    fn current_screen_mut(&mut self) -> &mut dyn Screen {
-        match self.current_screen {
-            ScreenChoices::Game => self.screens[GAME_INDEX].as_deref_mut().unwrap(),
-            ScreenChoices::StartMenu => self.screens[MAIN_MENU_INDEX].as_deref_mut().unwrap(),
-        }
+        let subscription_batch = vec![
+            // Active when timer is active
+            match self.timer_status {
+                TimerStatus::Running => Some(
+                    time::every(time::Duration::from_secs(1))
+                        .map(|s| Message::Game(game_screen::Message::CurrentTime(s))),
+                ),
+                TimerStatus::Stopped => None,
+            },
+            // Exits when ESC is pressed
+            Option::from(keyboard::on_key_press(|key, _modifier| {
+                if let keyboard::Key::Named(keyboard::key::Named::Escape) = key {
+                    Some(Message::Exit)
+                } else {
+                    None
+                }
+            })),
+        ];
+        Subscription::batch(subscription_batch.into_iter().flatten().collect::<Vec<_>>())
     }
 }

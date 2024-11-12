@@ -1,106 +1,106 @@
-use iced::*;
+use iced::{widget::*, *};
 
-use super::*;
-use crate::Board;
-
-#[derive(Debug, Clone, Copy)]
-pub enum GameMessage {
-    OpenTile(u8, u8),
-    FlagTile(u8, u8),
-    SafeOpenTile(u8, u8),
-    GameFinished { won: bool },
-}
+use crate::{minesweeper_core::Board, minesweeper_gui::Screen};
 pub struct GameScreen {
     board: Board,
-    seconds_elapsed: u64,
     start_time: Option<time::Instant>,
+    current_time: Option<time::Instant>,
 }
 
 impl GameScreen {
-    pub fn new(width: u8, height: u8, mine_count: u16) -> GameScreen {
+    pub fn new(width: u8, height: u8, mines: u16) -> Self {
         Self {
-            board: Board::build(width, height, mine_count).unwrap(),
-            seconds_elapsed: 0,
+            board: Board::build(width, height, mines).unwrap(),
             start_time: None,
+            current_time: None,
         }
-    }
-    fn display_tile(&self, x: u8, y: u8) -> impl Into<Element<Message>> {
-        let tile = self.board.get(x, y).unwrap();
-        let graphic = if !tile.is_open() {
-            if tile.is_flagged() {
-                " P".into()
-            } else {
-                "[]".into()
-            }
-        } else if tile.is_mined() {
-            " *".into()
-        } else {
-            let value = tile.surrounding_mines().unwrap();
-            if value == 0 {
-                "  ".into()
-            } else {
-                format!(" {}", value)
-            }
-        };
-        text!("{}", graphic)
-    }
-    fn display_board(&self) -> impl Into<Element<Message>> {
-        let mut row = Row::with_capacity(self.board.width() as usize).spacing(2);
-        for x in 0..self.board.width() {
-            let mut col = Column::with_capacity(self.board.height() as usize);
-            for y in 0..self.board.height() {
-                let element = MouseArea::new(self.display_tile(x, y))
-                    .on_press(Message::Game(GameMessage::OpenTile(x, y)))
-                    .on_middle_press(Message::Game(GameMessage::SafeOpenTile(x, y)))
-                    .on_right_press(Message::Game(GameMessage::FlagTile(x, y)));
-                col = col.push(element);
-            }
-            row = row.push(col);
-        }
-        row
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum Action {
+    None,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Message {
+    OpenTile(u8, u8),
+    ToggleTileFlag(u8, u8),
+    SafeOpenTile(u8, u8),
+    CurrentTime(time::Instant),
+}
+
 impl Screen for GameScreen {
-    fn update(&mut self, message: Message) -> Task<Message> {
+    type ScreenMessage = Message;
+    type ScreenAction = Action;
+
+    fn update(&mut self, message: Self::ScreenMessage) -> Self::ScreenAction {
         match message {
-            Message::Game(game_message) => match game_message {
-                GameMessage::OpenTile(x, y) => {
-                    self.board.open_tile(x, y);
-                }
-                GameMessage::FlagTile(x, y) => {
-                    self.board.toggle_flag(x, y);
-                }
-                GameMessage::SafeOpenTile(x, y) => {
-                    self.board.open_safe(x, y);
-                }
-                _ => {}
-            },
-            Message::ChangeScreen(ScreenChoices::Game) => {
-                self.start_time = Some(time::Instant::now());
+            Message::OpenTile(x, y) => {
+                self.board.open_tile(x, y);
             }
-            Message::QueryingTime(instant) => {
-                self.seconds_elapsed = instant
-                    .saturating_duration_since(self.start_time.unwrap())
-                    .as_secs()
+            Message::ToggleTileFlag(x, y) => {
+                self.board.toggle_flag(x, y);
             }
-            _ => {}
+            Message::SafeOpenTile(x, y) => {
+                self.board.open_safe(x, y);
+            }
+            Message::CurrentTime(time) => {
+                if self.start_time.is_none() {
+                    self.start_time = Some(time);
+                }
+                self.current_time = Some(time);
+            }
         }
-        if !self.board.is_playing() {
-            return Task::done(Message::DeactivateTimer)
-                .chain(Task::done(Message::Game(GameMessage::GameFinished {
-                    won: !self.board.hit_mine(),
-                })))
-                .chain(Task::done(Message::ChangeScreen(ScreenChoices::StartMenu)));
-        }
-        Task::none()
+        Action::None
     }
 
-    fn view(&self) -> Element<Message> {
-        let content = widget::column![
-            text!("{}", self.seconds_elapsed),
-            self.display_board().into()
-        ];
-        center(content).into()
+    fn view(&self) -> Element<Self::ScreenMessage> {
+        let timer = if let [Some(start), Some(now)] = [self.start_time, self.current_time] {
+            text!(
+                "Time elapsed: {}",
+                now.saturating_duration_since(start).as_secs()
+            )
+        } else {
+            text!("Time elapsed: 0")
+        };
+        center(widget::column![self.display_board(), timer]).into()
+    }
+}
+
+impl GameScreen {
+    fn display_tile(&self, x: u8, y: u8) -> Element<Message> {
+        let tile = self.board.get(x, y).unwrap();
+        let display = if tile.is_open() {
+            if tile.is_mined() {
+                "*".into()
+            } else if tile.surrounding_mines().unwrap() == 0 {
+                " ".into()
+            } else {
+                format!("{}", tile.surrounding_mines().unwrap())
+            }
+        } else if tile.is_flagged() {
+            "P".into()
+        } else {
+            "O".into()
+        };
+        MouseArea::new(Text::new(display))
+            .on_press(Message::OpenTile(x, y))
+            .on_middle_press(Message::SafeOpenTile(x, y))
+            .on_right_press(Message::ToggleTileFlag(x, y))
+            .into()
+    }
+    fn display_board(&self) -> Element<Message> {
+        let mut full_board = Column::with_capacity(self.board.height() as usize);
+        for y in 0..self.board.height() {
+            let mut row = Row::with_capacity(self.board.width() as usize);
+            for x in 0..self.board.width() {
+                let tile = self.display_tile(x, y);
+                row = row.push(tile);
+            }
+            row = row.spacing(5);
+            full_board = full_board.push(row);
+        }
+        full_board.into()
     }
 }

@@ -13,4 +13,3 @@ lto = "thin"
 [dependencies]
 rand = { version = "0.8", features = ["small_rng"] }
 iced = { version = "0.13", features = ["tokio"] }
-tokio = "1.41"
