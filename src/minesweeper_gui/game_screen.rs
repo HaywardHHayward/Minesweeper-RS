@@ -64,7 +64,10 @@ impl Screen for GameScreen {
         } else {
             text!("Time elapsed: 0")
         };
-        center(widget::column![self.display_board(), timer]).into()
+        center(
+            container(widget::column![self.display_board(), timer]).style(container::rounded_box),
+        )
+        .into()
     }
 }
 

@@ -4,7 +4,7 @@ authors = ["Hayden Reckward <tictanic8@hotmail.com>"]
 license = "Artistic-2.0"
 readme = "README.md"
 repository = "https://github.com/HaywardHHayward/Minesweeper-RS"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [profile.release]

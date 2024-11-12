@@ -52,6 +52,6 @@ impl Screen for StartScreen {
                 height: 16,
                 mines: 99,
             }));
-        center(widget::column![beginner, intermediate, expert]).into()
+        center(widget::column![beginner, intermediate, expert].align_x(Center)).into()
     }
 }
