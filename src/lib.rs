@@ -1,2 +1,2 @@
-mod core;
-mod gui;
+pub mod core;
+pub mod gui;

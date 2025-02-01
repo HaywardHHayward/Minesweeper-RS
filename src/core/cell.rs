@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub(crate) struct Cell {
+pub struct Cell {
     open_state: OpenState,
     mine_state: MineState,
 }
@@ -63,7 +63,7 @@ enum CellEvent {
 }
 
 impl Cell {
-    pub(crate) const fn new() -> Self {
+    pub const fn new() -> Self {
         Cell {
             open_state: OpenState::Unopened { is_flagged: false },
             mine_state: MineState::Safe {
@@ -71,63 +71,62 @@ impl Cell {
             },
         }
     }
-    fn cell_transition(&mut self, cell_event: CellEvent) {
-        match cell_event {
-            CellEvent::Open => {
-                if matches!(self.open_state, OpenState::Unopened { is_flagged: false }) {
-                    self.open_state = OpenState::Opened;
-                }
-            }
-            CellEvent::ToggleFlag => {
-                if let OpenState::Unopened { is_flagged } = &mut self.open_state {
-                    *is_flagged = !*is_flagged;
-                }
-            }
-            CellEvent::BecomeMined => {
-                if matches!(self.open_state, OpenState::Opened) {
-                    return;
-                }
-                self.mine_state = MineState::Mined;
-            }
-            CellEvent::IncrementAdjacentMines => {
-                if matches!(self.open_state, OpenState::Opened) {
-                    return;
-                }
-                if let MineState::Safe { adjacent_mines } = &mut self.mine_state {
-                    if u8::from(*adjacent_mines) < 8 {
-                        *adjacent_mines = AdjacentMines::try_from(u8::from(*adjacent_mines) + 1)
-                            .expect("Invalid number of adjacent mines");
-                    }
-                }
-            }
-        }
-    }
-    pub(crate) fn open(&mut self) {
+    pub fn open(&mut self) {
         self.cell_transition(CellEvent::Open);
     }
-    pub(crate) const fn is_open(&self) -> bool {
+    pub const fn is_open(&self) -> bool {
         matches!(self.open_state, OpenState::Opened)
     }
-    pub(crate) fn toggle_flag(&mut self) {
+    pub fn toggle_flag(&mut self) {
         self.cell_transition(CellEvent::ToggleFlag);
     }
-    pub(crate) const fn is_flagged(&self) -> bool {
+    pub const fn is_flagged(&self) -> bool {
         matches!(self.open_state, OpenState::Unopened { is_flagged: true })
     }
-    pub(crate) fn become_mined(&mut self) {
+    pub fn become_mined(&mut self) {
         self.cell_transition(CellEvent::BecomeMined);
     }
-    pub(crate) const fn is_mine(&self) -> bool {
+    pub const fn is_mine(&self) -> bool {
         matches!(self.mine_state, MineState::Mined)
     }
-    pub(crate) fn increment_adjacent_mines(&mut self) {
+    pub fn increment_adjacent_mines(&mut self) {
         self.cell_transition(CellEvent::IncrementAdjacentMines);
     }
-    pub(crate) fn adjacent_mines(&self) -> Option<u8> {
+    pub fn adjacent_mines(&self) -> Option<u8> {
         if let MineState::Safe { adjacent_mines } = &self.mine_state {
             Some(u8::from(*adjacent_mines))
         } else {
             None
+        }
+    }
+    fn cell_transition(&mut self, cell_event: CellEvent) {
+        match (cell_event, &self.open_state, &self.mine_state) {
+            (_, OpenState::Opened, _) => (),
+            (CellEvent::Open, OpenState::Unopened { is_flagged: false }, _) => {
+                self.open_state = OpenState::Opened;
+            }
+            (CellEvent::ToggleFlag, OpenState::Unopened { is_flagged }, _) => {
+                self.open_state = OpenState::Unopened {
+                    is_flagged: !is_flagged,
+                };
+            }
+            (CellEvent::BecomeMined, OpenState::Unopened { .. }, MineState::Safe { .. }) => {
+                self.mine_state = MineState::Mined;
+            }
+            (
+                CellEvent::IncrementAdjacentMines,
+                OpenState::Unopened { .. },
+                MineState::Safe { adjacent_mines },
+            ) => {
+                if let Ok(new_adjacent_mines) =
+                    AdjacentMines::try_from(u8::from(*adjacent_mines) + 1)
+                {
+                    self.mine_state = MineState::Safe {
+                        adjacent_mines: new_adjacent_mines,
+                    };
+                }
+            }
+            (..) => (),
         }
     }
 }
