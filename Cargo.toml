@@ -12,3 +12,4 @@ lto = "thin"
 
 [dependencies]
 rand = "0.9.0"
+iced = "0.13.1"

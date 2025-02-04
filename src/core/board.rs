@@ -1,29 +1,39 @@
 use std::{
+    collections::HashSet,
     num::{NonZeroU16, NonZeroU8},
-    ops::{Index, IndexMut},
 };
 
 use rand::prelude::*;
 
 use crate::core::cell::Cell;
 
+#[derive(Copy, Clone, Debug)]
+pub(crate) enum BoardState {
+    InProgress,
+    Won,
+    Lost,
+}
+
 #[derive(Debug)]
-pub struct Board {
+pub(crate) struct Board {
     cells: Vec<Cell>,
     width: NonZeroU8,
     height: NonZeroU8,
     mine_count: NonZeroU16,
+    unopened_coordinates: HashSet<(u8, u8)>,
+    mined_coordinates: HashSet<(u8, u8)>,
     first_open: bool,
+    state: BoardState,
 }
 
 #[derive(Debug)]
-pub enum BoardError {
+pub(crate) enum BoardError {
     InvalidBoardSize,
     TooManyMines(NonZeroU16),
 }
 
 impl Board {
-    pub fn create(
+    pub(crate) fn create(
         width: NonZeroU8,
         height: NonZeroU8,
         mine_count: NonZeroU16,
@@ -35,55 +45,80 @@ impl Board {
         if mine_count.get() >= board_area {
             return Err(BoardError::TooManyMines(mine_count));
         }
-        let mut cells = Vec::with_capacity(board_area as usize);
-        for _ in 0..board_area {
-            let cell = Cell::new();
-            cells.push(cell);
-        }
+        let cells = vec![Cell::new(); board_area as usize];
+        let unopened_coordinates = (0..width.get())
+            .flat_map(|x| (0..height.get()).map(move |y| (x, y)))
+            .collect();
+        let mined_coordinates = HashSet::with_capacity(mine_count.get() as usize);
         Ok(Self {
             cells,
             width,
             height,
             mine_count,
+            unopened_coordinates,
+            mined_coordinates,
             first_open: true,
+            state: BoardState::InProgress,
         })
     }
-    pub fn get_cell(&self, x: u8, y: u8) -> Option<&Cell> {
+    pub(crate) fn create_beginner() -> Self {
+        Self::create(
+            NonZeroU8::new(9).unwrap(),
+            NonZeroU8::new(9).unwrap(),
+            NonZeroU16::new(10).unwrap(),
+        )
+        .unwrap()
+    }
+    pub(crate) fn create_intermediate() -> Self {
+        Self::create(
+            NonZeroU8::new(16).unwrap(),
+            NonZeroU8::new(16).unwrap(),
+            NonZeroU16::new(40).unwrap(),
+        )
+        .unwrap()
+    }
+    pub(crate) fn create_expert() -> Self {
+        Self::create(
+            NonZeroU8::new(30).unwrap(),
+            NonZeroU8::new(16).unwrap(),
+            NonZeroU16::new(99).unwrap(),
+        )
+        .unwrap()
+    }
+    pub(crate) fn get_cell(&self, x: u8, y: u8) -> Option<&Cell> {
         if x >= self.get_width() || y >= self.get_height() {
             return None;
         }
-        let index = coordinate_to_linear(x, y, self.width);
-        self.cells.get(index)
+        self.cells.get(coordinate_to_linear(x, y, self.width))
     }
-    pub fn get_cell_mut(&mut self, x: u8, y: u8) -> Option<&mut Cell> {
+    pub(crate) fn get_cell_mut(&mut self, x: u8, y: u8) -> Option<&mut Cell> {
         if x >= self.get_width() || y >= self.get_height() {
             return None;
         }
-        let index = coordinate_to_linear(x, y, self.width);
-        self.cells.get_mut(index)
+        self.cells.get_mut(coordinate_to_linear(x, y, self.width))
     }
-    pub const fn get_width(&self) -> u8 {
+    pub(crate) const fn get_width(&self) -> u8 {
         self.width.get()
     }
-    pub const fn get_height(&self) -> u8 {
+    pub(crate) const fn get_height(&self) -> u8 {
         self.height.get()
     }
-    pub fn open_cell(&mut self, x: u8, y: u8) {
-        {
-            let Some(cell) = self.get_cell(x, y) else {
-                return;
-            };
-            if cell.is_open() || cell.is_flagged() {
-                return;
-            }
+    pub(crate) fn open_cell(&mut self, x: u8, y: u8) {
+        let Some(cell_check) = self.get_cell(x, y) else {
+            return;
+        };
+        if cell_check.is_open() || cell_check.is_flagged() {
+            return;
         }
         if self.first_open {
             self.generate_mines(x, y);
             self.first_open = false;
         }
+        self.unopened_coordinates.remove(&(x, y));
         let cell = self.get_cell_mut(x, y).unwrap();
         cell.open();
         if cell.is_mine() {
+            self.state = BoardState::Lost;
             return;
         }
         if cell.adjacent_mines().unwrap() == 0 {
@@ -91,8 +126,11 @@ impl Board {
                 self.open_cell(surrounding_x, surrounding_y);
             }
         }
+        if self.unopened_coordinates == self.mined_coordinates {
+            self.state = BoardState::Won;
+        }
     }
-    pub fn toggle_flag(&mut self, x: u8, y: u8) {
+    pub(crate) fn toggle_flag(&mut self, x: u8, y: u8) {
         let Some(cell) = self.get_cell_mut(x, y) else {
             return;
         };
@@ -100,6 +138,9 @@ impl Board {
             return;
         }
         cell.toggle_flag();
+    }
+    pub(crate) fn get_state(&self) -> BoardState {
+        self.state
     }
     fn get_surrounding_coordinates(&self, x: u8, y: u8) -> Vec<(u8, u8)> {
         let mut coordinates = Vec::with_capacity(8);
@@ -147,22 +188,8 @@ impl Board {
                     .increment_adjacent_mines();
             }
             self.get_cell_mut(*mine_x, *mine_y).unwrap().become_mined();
+            self.mined_coordinates.insert((*mine_x, *mine_y));
         }
-    }
-}
-
-impl Index<(u8, u8)> for Board {
-    type Output = Cell;
-    fn index(&self, index: (u8, u8)) -> &Self::Output {
-        self.get_cell(index.0, index.1)
-            .expect("Index out of bounds")
-    }
-}
-
-impl IndexMut<(u8, u8)> for Board {
-    fn index_mut(&mut self, index: (u8, u8)) -> &mut Self::Output {
-        self.get_cell_mut(index.0, index.1)
-            .expect("Index out of bounds")
     }
 }
 
