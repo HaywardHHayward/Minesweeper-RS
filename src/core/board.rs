@@ -1,6 +1,6 @@
 use std::{
     collections::HashSet,
-    num::{NonZeroU16, NonZeroU8},
+    num::{NonZeroU8, NonZeroU16},
 };
 
 use rand::prelude::*;
@@ -33,7 +33,7 @@ pub(crate) enum BoardError {
 }
 
 impl Board {
-    pub(crate) fn create(
+    pub(crate) fn create_custom(
         width: NonZeroU8,
         height: NonZeroU8,
         mine_count: NonZeroU16,
@@ -62,7 +62,7 @@ impl Board {
         })
     }
     pub(crate) fn create_beginner() -> Self {
-        Self::create(
+        Self::create_custom(
             NonZeroU8::new(9).unwrap(),
             NonZeroU8::new(9).unwrap(),
             NonZeroU16::new(10).unwrap(),
@@ -70,7 +70,7 @@ impl Board {
         .unwrap()
     }
     pub(crate) fn create_intermediate() -> Self {
-        Self::create(
+        Self::create_custom(
             NonZeroU8::new(16).unwrap(),
             NonZeroU8::new(16).unwrap(),
             NonZeroU16::new(40).unwrap(),
@@ -78,7 +78,7 @@ impl Board {
         .unwrap()
     }
     pub(crate) fn create_expert() -> Self {
-        Self::create(
+        Self::create_custom(
             NonZeroU8::new(30).unwrap(),
             NonZeroU8::new(16).unwrap(),
             NonZeroU16::new(99).unwrap(),
@@ -201,7 +201,7 @@ const fn coordinate_to_linear(x: u8, y: u8, width: NonZeroU8) -> usize {
 mod testing {
     use super::*;
     fn create_board(x: u8, y: u8, m: u16) -> Result<Board, BoardError> {
-        Board::create(
+        Board::create_custom(
             NonZeroU8::new(x).unwrap(),
             NonZeroU8::new(y).unwrap(),
             NonZeroU16::new(m).unwrap(),
