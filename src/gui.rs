@@ -17,6 +17,7 @@ pub enum Screen {
     Settings,
 }
 
+#[derive(Debug)]
 pub enum ScreenState {
     MainMenu(main_menu::MainMenu),
     Settings(settings::Settings),
@@ -31,6 +32,7 @@ impl ScreenState {
     }
 }
 
+#[derive(Debug)]
 pub struct Application {
     current_screen: Screen,
     screens: HashMap<Screen, ScreenState>,
@@ -40,7 +42,6 @@ impl Default for Application {
     fn default() -> Self {
         let mut screens = HashMap::with_capacity(1);
         screens.insert(Screen::MainMenu, ScreenState::MainMenu(main_menu::MainMenu));
-        screens.insert(Screen::Settings, ScreenState::Settings(settings::Settings));
         Self {
             current_screen: Screen::MainMenu,
             screens,
@@ -68,9 +69,7 @@ impl Application {
             }
             (ScreenState::MainMenu(main_menu), Message::MainMenu(msg)) => main_menu.update(msg),
             (ScreenState::MainMenu(_), _) => Task::none(),
-            (ScreenState::Settings(settings), Message::Settings(msg)) => {
-                todo!()
-            }
+            (ScreenState::Settings(settings), Message::Settings(msg)) => settings.update(msg),
             (ScreenState::Settings(_), _) => Task::none(),
         }
     }

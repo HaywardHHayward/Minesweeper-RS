@@ -1,7 +1,8 @@
 use iced::{Element, Task, widget as GuiWidget};
 
-use super::{Message as AppMessage, ScreenState, ScreenTrait};
+use super::{Message as AppMessage, Screen, ScreenState, ScreenTrait};
 
+#[derive(Debug, Default)]
 pub struct MainMenu;
 
 impl From<MainMenu> for ScreenState {
@@ -13,7 +14,8 @@ impl From<MainMenu> for ScreenState {
 #[derive(Debug, Clone, Copy)]
 pub enum Message {
     Start,
-    Settings,
+    OpenLeaderboard,
+    OpenSettings,
     Exit,
 }
 
@@ -29,7 +31,8 @@ impl ScreenTrait for MainMenu {
     fn update(&mut self, message: Message) -> Task<AppMessage> {
         match message {
             Message::Start => todo!(),
-            Message::Settings => todo!(),
+            Message::OpenLeaderboard => todo!(),
+            Message::OpenSettings => Task::done(AppMessage::ChangeScreen(Screen::Settings)),
             Message::Exit => iced::exit(),
         }
     }
@@ -37,7 +40,8 @@ impl ScreenTrait for MainMenu {
         let title = GuiWidget::text("Minesweeper").size(50);
         let buttons = GuiWidget::column![
             GuiWidget::button("Start").on_press(Message::Start),
-            GuiWidget::button("Settings").on_press(Message::Settings),
+            GuiWidget::button("Leaderboard").on_press(Message::OpenLeaderboard),
+            GuiWidget::button("Settings").on_press(Message::OpenSettings),
             GuiWidget::button("Exit").on_press(Message::Exit),
         ]
         .spacing(5)

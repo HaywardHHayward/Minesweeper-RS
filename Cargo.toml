@@ -13,3 +13,5 @@ lto = "thin"
 [dependencies]
 rand = "0.9.0"
 iced = "0.13.1"
+serde = { version = "1.0", features = ["derive"] }
+ciborium = { version = "0.2.2" }
