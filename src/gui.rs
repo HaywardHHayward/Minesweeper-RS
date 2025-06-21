@@ -10,7 +10,7 @@ pub fn update(state: &mut Application, message: Message) -> Task<Message> {
     state.update(message)
 }
 
-pub fn view(state: &Application) -> Element<Message> {
+pub fn view(state: &Application) -> Element<'_, Message> {
     state.view()
 }
 
@@ -18,12 +18,12 @@ pub fn subscription(state: &Application) -> Subscription<Message> {
     state.subscription()
 }
 
-trait ScreenTrait {
+pub(crate) trait ScreenTrait {
     type Message: std::fmt::Debug;
-    fn update(&mut self, message: Self::Message) -> Task<Message> {
+    fn update(&mut self, _message: Self::Message) -> Task<Message> {
         Task::none()
     }
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         iced::widget::text("Hello, world!").into()
     }
     fn subscription(&self) -> Subscription<Self::Message> {
@@ -84,7 +84,7 @@ impl ScreenTrait for Application {
                 .update(screen_message),
         }
     }
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         self.screens
             .get(&self.current_screen)
             .unwrap_or_else(|| panic!("current_screen {:?} not found", self.current_screen))
@@ -150,7 +150,7 @@ impl ScreenTrait for Screen {
             _ => Task::none(),
         }
     }
-    fn view(&self) -> Element<ScreenMessage> {
+    fn view(&self) -> Element<'_, ScreenMessage> {
         match self {
             Screen::MainMenu(menu) => menu.view().map(ScreenMessage::MainMenu),
             Screen::Settings(settings) => settings.view().map(ScreenMessage::Settings),

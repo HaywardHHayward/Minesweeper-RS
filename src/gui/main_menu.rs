@@ -37,7 +37,7 @@ impl ScreenTrait for MainMenu {
         }
     }
 
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         let title = GuiWidget::text!("Minesweeper").size(50);
         let buttons = GuiWidget::column![
             GuiWidget::button("Start Game").on_press(Action::StartGame),

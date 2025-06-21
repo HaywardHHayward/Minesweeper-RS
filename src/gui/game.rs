@@ -32,7 +32,7 @@ impl ScreenTrait for Game {
     fn update(&mut self, _message: Self::Message) -> Task<AppMessage> {
         Task::none()
     }
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         GuiWidget::text("Game screen is not implemented yet").into()
     }
 }
