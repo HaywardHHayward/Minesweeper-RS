@@ -130,6 +130,25 @@ impl Board {
             self.state = BoardState::Won;
         }
     }
+    pub(crate) fn open_unflagged(&mut self, x: u8, y: u8) {
+        let Some(cell) = self.get_cell(x, y) else {
+            return;
+        };
+        if !cell.is_open() {
+            return;
+        }
+        let surrounding_coordinates = self.get_surrounding_coordinates(x, y);
+        let (flagged, unflagged): (Vec<_>, Vec<_>) = surrounding_coordinates
+            .into_iter()
+            .filter(|(x, y)| self.get_cell(*x, *y).is_some_and(|cell| !cell.is_open()))
+            .partition(|(x, y)| self.get_cell(*x, *y).is_some_and(|cell| cell.is_flagged()));
+        if flagged.len() != cell.adjacent_mines().unwrap_or(0) as usize {
+            return;
+        }
+        for (surrounding_x, surrounding_y) in unflagged {
+            self.open_cell(surrounding_x, surrounding_y);
+        }
+    }
     pub(crate) fn toggle_flag(&mut self, x: u8, y: u8) {
         let Some(cell) = self.get_cell_mut(x, y) else {
             return;

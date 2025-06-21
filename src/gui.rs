@@ -1,39 +1,124 @@
-use std::{future::Future, pin::Pin};
-use std::collections::HashMap;
+use std::{collections::HashMap, future::Future, pin::Pin};
+
 use iced::{Element, Subscription, Task};
 
 pub mod game;
 pub mod main_menu;
 pub mod settings;
 
+pub fn update(state: &mut Application, message: Message) -> Task<Message> {
+    state.update(message)
+}
+
+pub fn view(state: &Application) -> Element<Message> {
+    state.view()
+}
+
+pub fn subscription(state: &Application) -> Subscription<Message> {
+    state.subscription()
+}
+
+trait ScreenTrait {
+    type Message: std::fmt::Debug;
+    fn update(&mut self, message: Self::Message) -> Task<Message> {
+        Task::none()
+    }
+    fn view(&self) -> Element<Self::Message> {
+        iced::widget::text("Hello, world!").into()
+    }
+    fn subscription(&self) -> Subscription<Self::Message> {
+        Subscription::none()
+    }
+}
+
 #[derive(Debug)]
 pub struct Application {
     current_screen: ScreenType,
-    screens: HashMap<ScreenType, Screen>
+    screens: HashMap<ScreenType, Screen>,
 }
 
 impl Default for Application {
     fn default() -> Self {
+        let mut screens = HashMap::with_capacity(3);
+        screens.insert(ScreenType::MainMenu, Screen::MainMenu(main_menu::MainMenu));
         Application {
             current_screen: ScreenType::MainMenu,
-            screens: HashMap::with_capacity(3),
+            screens,
         }
+    }
+}
+
+impl ScreenTrait for Application {
+    type Message = Message;
+    fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
+        match message {
+            Message::InitializeScreen {
+                screen_type,
+                initializer_fn: callback,
+                change_screen,
+            } => Task::perform(callback(), move |screen| Message::InitializedScreen {
+                screen_type,
+                initialized_screen: screen,
+            })
+            .chain(if change_screen {
+                Task::done(Message::ChangeScreen(screen_type))
+            } else {
+                Task::none()
+            }),
+            Message::InitializedScreen {
+                screen_type,
+                initialized_screen: screen,
+            } => {
+                // Logic to handle the initialized screen can be added here
+                self.screens.insert(screen_type, screen);
+                Task::none()
+            }
+            Message::ChangeScreen(screen_type) => {
+                self.current_screen = screen_type;
+                Task::none()
+            }
+            Message::ScreenAction(screen_message) => self
+                .screens
+                .get_mut(&self.current_screen)
+                .unwrap_or_else(|| panic!("current_screen {:?} not found", self.current_screen))
+                .update(screen_message),
+        }
+    }
+    fn view(&self) -> Element<Self::Message> {
+        self.screens
+            .get(&self.current_screen)
+            .unwrap_or_else(|| panic!("current_screen {:?} not found", self.current_screen))
+            .view()
+            .map(Message::ScreenAction)
+    }
+    fn subscription(&self) -> Subscription<Self::Message> {
+        self.screens
+            .get(&self.current_screen)
+            .unwrap_or_else(|| panic!("current_screen {:?} not found", self.current_screen))
+            .subscription()
+            .map(Message::ScreenAction)
     }
 }
 
 type Callback<Output> = fn() -> Pin<Box<dyn Future<Output = Output> + Send>>;
 
 #[derive(Debug)]
-pub enum AppMessage {
-    InitializeScreen(ScreenType, Callback<Screen>),
-    InitializedScreen(ScreenType, ()),
-    ChangeScreen,
+pub enum Message {
+    InitializeScreen {
+        screen_type: ScreenType,
+        initializer_fn: Callback<Screen>,
+        change_screen: bool,
+    },
+    InitializedScreen {
+        screen_type: ScreenType,
+        initialized_screen: Screen,
+    },
+    ChangeScreen(ScreenType),
     ScreenAction(ScreenMessage),
 }
 
 #[derive(Debug)]
 pub enum ScreenMessage {
-    // Any unit variants are placeholders for screen-specific actions
     MainMenu(main_menu::Action),
     Settings(settings::Action),
     Game(game::Action),
@@ -53,78 +138,30 @@ pub enum Screen {
     Game(game::Game),
 }
 
-impl Screen {
-    pub fn update(&mut self, message: ScreenMessage) -> Task<AppMessage> {
+impl ScreenTrait for Screen {
+    type Message = ScreenMessage;
+    fn update(&mut self, message: ScreenMessage) -> Task<Message> {
         match (self, message) {
-            (Screen::MainMenu(menu), ScreenMessage::MainMenu(action)) => {
-                // Handle main menu action
-                Task::none()
-            }
+            (Screen::MainMenu(menu), ScreenMessage::MainMenu(action)) => menu.update(action),
             (Screen::Settings(settings), ScreenMessage::Settings(action)) => {
-                // Handle settings action
-                Task::none()
+                settings.update(action)
             }
-            (Screen::Game(game), ScreenMessage::Game(action)) => {
-                // Handle game action
-                Task::none()
-            }
+            (Screen::Game(game), ScreenMessage::Game(action)) => game.update(action),
             _ => Task::none(),
         }
     }
-    pub fn view(&self) -> Element<AppMessage> {
+    fn view(&self) -> Element<ScreenMessage> {
         match self {
-            Screen::MainMenu(menu) => todo!(),
-            Screen::Settings(settings) => todo!(),
-            Screen::Game(game) => todo!(),
+            Screen::MainMenu(menu) => menu.view().map(ScreenMessage::MainMenu),
+            Screen::Settings(settings) => settings.view().map(ScreenMessage::Settings),
+            Screen::Game(game) => game.view().map(ScreenMessage::Game),
         }
     }
-    pub fn subscription(&self) -> Subscription<AppMessage> {
+    fn subscription(&self) -> Subscription<ScreenMessage> {
         match self {
-            Screen::MainMenu(_) => Subscription::none(),
-            Screen::Settings(_) => Subscription::none(),
-            Screen::Game(_) => Subscription::none(),
+            Screen::MainMenu(menu) => menu.subscription().map(ScreenMessage::MainMenu),
+            Screen::Settings(settings) => settings.subscription().map(ScreenMessage::Settings),
+            Screen::Game(game) => game.subscription().map(ScreenMessage::Game),
         }
     }
-}
-
-impl Application {
-    pub fn update(&mut self, message: AppMessage) -> Task<AppMessage> {
-        match message {
-            AppMessage::InitializeScreen(screen_type, callback) => {
-                Task::perform(callback(), move |_| {
-                    AppMessage::InitializedScreen(screen_type, ())
-                })
-            }
-            AppMessage::InitializedScreen(screen_type, _) => {
-                // Logic to handle the initialized screen can be added here
-                Task::none()
-            }
-            AppMessage::ChangeScreen => {
-                // Logic to change the screen can be added here
-                Task::none()
-            }
-            AppMessage::ScreenAction(screen_message) => {
-                // Handle screen-specific actions
-                Task::none()
-            }
-        }
-    }
-    pub fn view(&self) -> Element<AppMessage> {
-        iced::widget::text("Hello world!").into()
-    }
-    pub fn subscription(&self) -> Subscription<AppMessage> {
-        Subscription::none()
-    }
-}
-
-pub fn update(state: &mut Application, message: AppMessage) -> Task<AppMessage> {
-    state.update(message)
-}
-
-pub fn view(state: &Application) -> Element<AppMessage> {
-    state.view()
-}
-
-pub fn subscription(state: &Application) -> iced::Subscription<AppMessage> {
-    state.subscription()
 }
