@@ -139,7 +139,6 @@ impl Board {
         }
         let surrounding_coordinates = self.get_surrounding_coordinates(x, y);
         let (flagged, unflagged): (Vec<_>, Vec<_>) = surrounding_coordinates
-            .into_iter()
             .filter(|(x, y)| self.get_cell(*x, *y).is_some_and(|cell| !cell.is_open()))
             .partition(|(x, y)| self.get_cell(*x, *y).is_some_and(|cell| cell.is_flagged()));
         if flagged.len() != cell.adjacent_mines().unwrap_or(0) as usize {
@@ -161,7 +160,7 @@ impl Board {
     pub(crate) fn get_state(&self) -> BoardState {
         self.state
     }
-    fn get_surrounding_coordinates(&self, x: u8, y: u8) -> Vec<(u8, u8)> {
+    fn get_surrounding_coordinates(&self, x: u8, y: u8) -> impl Iterator<Item = (u8, u8)> + use<> {
         let mut coordinates = Vec::with_capacity(8);
         for x_new in x.saturating_sub(1)..=x.saturating_add(1) {
             if x_new >= self.get_width() {
@@ -177,12 +176,13 @@ impl Board {
                 coordinates.push((x_new, y_new));
             }
         }
-        coordinates
+        coordinates.into_iter()
     }
     fn generate_mines(&mut self, x: u8, y: u8) {
         let mut rng = SmallRng::from_os_rng();
         let total_area = self.get_width() as u16 * self.get_height() as u16;
-        let mut surrounding_coordinates = self.get_surrounding_coordinates(x, y);
+        let mut surrounding_coordinates =
+            self.get_surrounding_coordinates(x, y).collect::<Vec<_>>();
         let too_many_mines =
             total_area - (surrounding_coordinates.len() as u16 + 1) < self.mine_count.get();
         let mut disallowed_coordinates: Vec<(u8, u8)> = vec![(x, y)];
