@@ -1,6 +1,6 @@
-﻿use iced::{Element, Task, futures::FutureExt, widget as GuiWidget};
+﻿use iced::{Element, Task, widget as GuiWidget};
 
-use crate::gui::{Message as AppMessage, ScreenTrait};
+use crate::gui::{Message as AppMessage, ScreenTrait, ScreenType};
 #[derive(Debug)]
 pub struct MainMenu;
 
@@ -23,15 +23,7 @@ impl ScreenTrait for MainMenu {
             Action::Settings => {
                 // TODO: Provide function to initialize settings screen, then change screen to
                 // it
-                Task::done(AppMessage::InitializeScreen {
-                    screen_type: super::ScreenType::Settings,
-                    initializer_fn: || {
-                        Box::pin(
-                            super::settings::initialize_settings().map(super::Screen::Settings),
-                        )
-                    },
-                    change_screen: true,
-                })
+                Task::done(AppMessage::ChangeScreen(ScreenType::Settings))
             }
             Action::Exit => iced::exit(),
         }
