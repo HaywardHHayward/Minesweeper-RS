@@ -1,11 +1,8 @@
-use iced::{Font, Theme};
-use minesweeper_rs::*;
+use minesweeper_rs::gui::*;
 
-fn main() -> iced::Result {
-    iced::application("Minesweeper", MinesweeperApp::update, MinesweeperApp::view)
-        .subscription(MinesweeperApp::subscription)
-        .centered()
-        .theme(|_| Theme::Light)
-        .default_font(Font::MONOSPACE)
+pub fn main() -> iced::Result {
+    iced::application("Minesweeper", update, view)
+        .settings(iced::Settings::default())
+        .subscription(subscription)
         .run()
 }
