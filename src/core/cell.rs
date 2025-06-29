@@ -1,5 +1,5 @@
 #[derive(Clone, Debug)]
-pub(crate) struct Cell {
+pub struct Cell {
     open_state: OpenState,
     mine_state: MineState,
 }
@@ -63,7 +63,7 @@ enum CellEvent {
 }
 
 impl Cell {
-    pub(crate) const fn new() -> Self {
+    pub const fn new() -> Self {
         Cell {
             open_state: OpenState::Unopened { is_flagged: false },
             mine_state: MineState::Safe {
@@ -71,36 +71,38 @@ impl Cell {
             },
         }
     }
-    pub(crate) fn open(&mut self) {
+    pub fn open(&mut self) {
         self.cell_transition(CellEvent::Open);
     }
-    pub(crate) const fn is_open(&self) -> bool {
+    pub const fn is_open(&self) -> bool {
         matches!(self.open_state, OpenState::Opened)
     }
-    pub(crate) fn toggle_flag(&mut self) {
+    pub fn toggle_flag(&mut self) {
         self.cell_transition(CellEvent::ToggleFlag);
     }
-    pub(crate) const fn is_flagged(&self) -> bool {
+    pub const fn is_flagged(&self) -> bool {
         matches!(self.open_state, OpenState::Unopened { is_flagged: true })
     }
-    pub(crate) fn become_mined(&mut self) {
+    pub fn become_mined(&mut self) {
         self.cell_transition(CellEvent::BecomeMined);
     }
-    pub(crate) const fn is_mine(&self) -> bool {
+    pub const fn is_mine(&self) -> bool {
         matches!(self.mine_state, MineState::Mined)
     }
-    pub(crate) fn increment_adjacent_mines(&mut self) {
+    pub fn increment_adjacent_mines(&mut self) {
         self.cell_transition(CellEvent::IncrementAdjacentMines);
     }
-    pub(crate) fn adjacent_mines(&self) -> Option<u8> {
+    pub fn adjacent_mines(&self) -> Option<u8> {
         if let MineState::Safe { adjacent_mines } = &self.mine_state {
             Some(u8::from(*adjacent_mines))
         } else {
             None
         }
     }
+    // Single function to handle all cell state transitions
     fn cell_transition(&mut self, cell_event: CellEvent) {
         match (cell_event, &self.open_state, &self.mine_state) {
+            // If the cell is already opened, we should not do anything to change its state
             (_, OpenState::Opened, _) => (),
             (CellEvent::Open, OpenState::Unopened { is_flagged: false }, _) => {
                 self.open_state = OpenState::Opened;
@@ -118,6 +120,8 @@ impl Cell {
                 OpenState::Unopened { .. },
                 MineState::Safe { adjacent_mines },
             ) => {
+                // This should always succeed, but better to be safe and only increment if it's
+                // less than 8
                 if let Ok(new_adjacent_mines) =
                     AdjacentMines::try_from(u8::from(*adjacent_mines) + 1)
                 {
