@@ -24,7 +24,7 @@ impl ScreenTrait for MainMenu {
                     initializer_fn: {
                         || {
                             Box::pin(
-                                super::game::initialize_game(super::game::Options::Beginner)
+                                super::game::initialize_game(super::game::Options::Expert)
                                     .map(super::Screen::Game),
                             )
                         }

@@ -1,7 +1,4 @@
-﻿use std::io::Read;
-
-use directories::ProjectDirs;
-use iced::{Element, Task, widget as GuiWidget};
+﻿use iced::{Element, Task, widget as GuiWidget};
 
 use crate::gui::{Message as AppMessage, ScreenTrait, ScreenType};
 #[derive(Debug)]
@@ -9,8 +6,6 @@ pub struct SettingsScreen;
 
 impl Default for SettingsScreen {
     fn default() -> Self {
-        // TODO: Create default settings, will be used when the settings file does not
-        // exist
         SettingsScreen
     }
 }

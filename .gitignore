@@ -25,3 +25,5 @@ target/
 
 .idea/**/gradle.xml
 .idea/**/libraries
+
+test_assets

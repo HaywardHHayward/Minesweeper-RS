@@ -141,7 +141,7 @@ impl Board {
             self.state = BoardState::Won;
         }
     }
-    pub fn open_unflagged(&mut self, x: u8, y: u8) {
+    pub fn chord_cell(&mut self, x: u8, y: u8) {
         let Some(cell) = self.get_cell(x, y) else {
             return;
         };
