@@ -1,9 +1,10 @@
-use std::{collections::HashMap, future::Future, pin::Pin};
+use std::collections::HashMap;
 
 use iced::{Element, Subscription, Task};
 
 mod config;
 pub mod game;
+pub mod game_selection;
 pub mod main_menu;
 pub mod settings_screen;
 
@@ -90,9 +91,9 @@ impl ScreenTrait for Application {
                 screen_type,
                 initializer_fn: callback,
                 change_screen,
-            } => Task::perform(callback(), move |screen| Message::InitializedScreen {
+            } => Task::done(Message::InitializedScreen {
                 screen_type,
-                initialized_screen: screen,
+                initialized_screen: callback(),
             })
             .chain(if change_screen {
                 Task::done(Message::ChangeScreen(screen_type))
@@ -143,9 +144,8 @@ impl ScreenTrait for Application {
     }
 }
 
-type Callback<Output> = fn() -> Pin<Box<dyn Future<Output = Output> + Send>>;
+type Callback<Output> = Box<dyn FnOnce() -> Output + Send + Sync>;
 
-#[derive(Debug)]
 pub enum Message {
     InitializeScreen {
         screen_type: ScreenType,
@@ -163,6 +163,7 @@ pub enum Message {
 #[derive(Debug)]
 pub enum ScreenMessage {
     MainMenu(main_menu::Action),
+    GameSelection(game_selection::Action),
     Settings(settings_screen::Action),
     Game(game::Action),
 }
@@ -170,6 +171,7 @@ pub enum ScreenMessage {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ScreenType {
     MainMenu,
+    GameSelection,
     Settings,
     Game,
 }
@@ -177,6 +179,7 @@ pub enum ScreenType {
 #[derive(Debug)]
 pub enum Screen {
     MainMenu(main_menu::MainMenu),
+    GameSelection(game_selection::GameSelection),
     Settings(settings_screen::SettingsScreen),
     Game(game::Game),
 }
@@ -186,6 +189,9 @@ impl ScreenTrait for Screen {
     fn update(&mut self, message: ScreenMessage) -> Task<Message> {
         match (self, message) {
             (Screen::MainMenu(menu), ScreenMessage::MainMenu(action)) => menu.update(action),
+            (Screen::GameSelection(game_selection), ScreenMessage::GameSelection(action)) => {
+                game_selection.update(action)
+            }
             (Screen::Settings(settings), ScreenMessage::Settings(action)) => {
                 settings.update(action)
             }
@@ -196,6 +202,9 @@ impl ScreenTrait for Screen {
     fn view(&self) -> Element<'_, ScreenMessage> {
         match self {
             Screen::MainMenu(menu) => menu.view().map(ScreenMessage::MainMenu),
+            Screen::GameSelection(game_selection) => {
+                game_selection.view().map(ScreenMessage::GameSelection)
+            }
             Screen::Settings(settings) => settings.view().map(ScreenMessage::Settings),
             Screen::Game(game) => game.view().map(ScreenMessage::Game),
         }
@@ -203,8 +212,39 @@ impl ScreenTrait for Screen {
     fn subscription(&self) -> Subscription<ScreenMessage> {
         match self {
             Screen::MainMenu(menu) => menu.subscription().map(ScreenMessage::MainMenu),
+            Screen::GameSelection(game_selection) => game_selection
+                .subscription()
+                .map(ScreenMessage::GameSelection),
             Screen::Settings(settings) => settings.subscription().map(ScreenMessage::Settings),
             Screen::Game(game) => game.subscription().map(ScreenMessage::Game),
+        }
+    }
+}
+
+impl std::fmt::Debug for Message {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Message::InitializeScreen {
+                screen_type,
+                initializer_fn: _,
+                change_screen,
+            } => {
+                write!(
+                    f,
+                    "InitializeScreen({screen_type:?}, .. , {change_screen:?})"
+                )
+            }
+            Message::InitializedScreen {
+                screen_type,
+                initialized_screen,
+            } => {
+                write!(
+                    f,
+                    "InitializedScreen({screen_type:?}, {initialized_screen:?})"
+                )
+            }
+            Message::ChangeScreen(screen_type) => write!(f, "ChangeScreen({screen_type:?})"),
+            Message::ScreenAction(action) => write!(f, "ScreenAction({action:?})"),
         }
     }
 }

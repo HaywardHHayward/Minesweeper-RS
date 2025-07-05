@@ -1,4 +1,4 @@
-﻿use iced::{Element, Task, futures::FutureExt, widget as GuiWidget};
+﻿use iced::{Element, Task, widget as GuiWidget};
 
 use crate::gui::{Message as AppMessage, ScreenTrait, ScreenType};
 
@@ -17,21 +17,15 @@ impl ScreenTrait for MainMenu {
 
     fn update(&mut self, message: Self::Message) -> Task<AppMessage> {
         match message {
-            Action::StartGame => {
-                // TODO: Start the game, have screen to chose difficulty
-                Task::done(AppMessage::InitializeScreen {
-                    screen_type: ScreenType::Game,
-                    initializer_fn: {
-                        || {
-                            Box::pin(
-                                super::game::initialize_game(super::game::Options::Expert)
-                                    .map(super::Screen::Game),
-                            )
-                        }
-                    },
-                    change_screen: true,
-                })
-            }
+            Action::StartGame => Task::done(AppMessage::InitializeScreen {
+                screen_type: ScreenType::GameSelection,
+                initializer_fn: Box::new(|| {
+                    crate::gui::Screen::GameSelection(
+                        crate::gui::game_selection::GameSelection::default(),
+                    )
+                }),
+                change_screen: true,
+            }),
             Action::Settings => {
                 // TODO: Provide function to initialize settings screen, then change screen to
                 // it

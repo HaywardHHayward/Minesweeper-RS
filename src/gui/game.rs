@@ -1,6 +1,4 @@
-﻿use std::num::{NonZeroU8, NonZeroU16};
-
-use iced::{Element, Task, widget as GuiWidget, widget::image as GuiImage};
+﻿use iced::{Element, Task, widget as GuiWidget, widget::image as GuiImage};
 
 use crate::{
     core::board::Board,
@@ -12,19 +10,18 @@ pub struct Game {
     board: Board,
 }
 
-pub(crate) enum Options {
-    Beginner,
-    Intermediate,
-    Expert,
-    Custom { width: u8, height: u8, mines: u16 },
-}
-
 #[derive(Debug, Clone)]
 pub enum Action {
     OpenCell(u8, u8),
     ToggleFlag(u8, u8),
     ChordCell(u8, u8),
     CheckGameStatus,
+}
+
+impl Game {
+    pub fn new(board: Board) -> Self {
+        Game { board }
+    }
 }
 
 impl ScreenTrait for Game {
@@ -146,23 +143,4 @@ impl Game {
             .on_middle_press(Action::ChordCell(x, y))
             .into()
     }
-}
-
-pub(crate) async fn initialize_game(option: Options) -> Game {
-    let board = match option {
-        Options::Beginner => Board::create_beginner(),
-        Options::Intermediate => Board::create_intermediate(),
-        Options::Expert => Board::create_expert(),
-        Options::Custom {
-            width,
-            height,
-            mines,
-        } => Board::create_custom(
-            NonZeroU8::new(width).unwrap(),
-            NonZeroU8::new(height).unwrap(),
-            NonZeroU16::new(mines).unwrap(),
-        )
-        .expect("Failed to create custom board"),
-    };
-    Game { board }
 }
