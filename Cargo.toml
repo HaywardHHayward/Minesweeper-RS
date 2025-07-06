@@ -1,11 +1,12 @@
 [package]
 name = "minesweeper-rs"
+version = "0.5.0"
 authors = ["Hayden Reckward <tictanic8@hotmail.com>"]
-license = "Artistic-2.0"
+edition = "2024"
+rust-version = "1.88.0"
 readme = "README.md"
 repository = "https://github.com/HaywardHHayward/Minesweeper-RS"
-version = "0.4.0"
-edition = "2024"
+license = "Artistic-2.0"
 
 [profile.release]
 lto = "thin"
