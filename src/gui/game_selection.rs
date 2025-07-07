@@ -114,24 +114,35 @@ impl ScreenTrait for GameSelection {
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
+        #[inline]
+        fn centered_text<'a>(
+            text: impl Into<GuiWidget::Text<'a>>,
+            fill_strategy: iced::Length,
+        ) -> impl Into<Element<'a, Action>> {
+            GuiWidget::container(text.into())
+                .align_x(iced::Center)
+                .width(fill_strategy)
+        }
         match self.state {
             GameSelectionImpl::OptionSelection => {
-                let beginner = GuiWidget::button("Beginner")
-                    .on_press(Action::StartGame(Options::Beginner))
-                    .width(iced::Fill);
-                let intermediate = GuiWidget::button("Intermediate")
-                    .on_press(Action::StartGame(Options::Intermediate))
-                    .width(iced::Fill);
-                let expert = GuiWidget::button("Expert")
-                    .on_press(Action::StartGame(Options::Expert))
-                    .width(iced::Fill);
-                let custom = GuiWidget::button("Custom")
-                    .on_press(Action::StartGame(Options::Custom))
-                    .width(iced::Fill);
-                let options = GuiWidget::column![beginner, intermediate, expert, custom].width(110);
+                let beginner = GuiWidget::button(centered_text("Beginning", iced::Fill))
+                    .on_press(Action::StartGame(Options::Beginner));
+                let intermediate = GuiWidget::button(centered_text("Intermediate", iced::Shrink))
+                    .on_press(Action::StartGame(Options::Intermediate));
+                let expert = GuiWidget::button(centered_text("Expert", iced::Fill))
+                    .on_press(Action::StartGame(Options::Expert));
+                let custom = GuiWidget::button(centered_text("Custom", iced::Fill))
+                    .on_press(Action::StartGame(Options::Custom));
+
+                let options =
+                    GuiWidget::column![beginner, intermediate, expert, custom].width(iced::Shrink);
+
                 let return_to_menu =
                     GuiWidget::button("Return to main menu").on_press(Action::ReturnToMainMenu);
-                let content = GuiWidget::column![options, return_to_menu].spacing(20);
+
+                let content = GuiWidget::column![options, return_to_menu]
+                    .align_x(iced::Center)
+                    .spacing(20);
                 GuiWidget::container(content).center(iced::Fill).into()
             }
             GameSelectionImpl::CustomSelection(ref custom) => {
@@ -140,23 +151,28 @@ impl ScreenTrait for GameSelection {
                 let row_editor = GuiWidget::text_input("", &custom.row)
                     .on_input(|input| Action::TextChanged(TextChangedEnum::Row, input))
                     .width(iced::Fill);
+
                 let column_text = GuiWidget::text("Columns: ");
                 let column_editor = GuiWidget::text_input("", &custom.column)
                     .on_input(|input| Action::TextChanged(TextChangedEnum::Column, input))
                     .width(iced::Fill);
+
                 let mines_text = GuiWidget::text("Mines: ");
                 let mines_editor = GuiWidget::text_input("", &custom.mines)
                     .on_input(|input| Action::TextChanged(TextChangedEnum::Mines, input))
                     .width(iced::Fill);
+
                 let texts = GuiWidget::column![row_text, column_text, mines_text]
                     .spacing(10)
                     .align_x(iced::Left);
                 let editors = GuiWidget::column![row_editor, column_editor, mines_editor]
                     .width(EDITOR_WIDTH)
                     .align_x(iced::Right);
+
                 let custom_editors = GuiWidget::row![texts, editors]
                     .height(iced::Shrink)
                     .align_y(iced::Center);
+
                 let create_button = GuiWidget::button("Create board").on_press_maybe(
                     if !custom.row.is_empty()
                         && !custom.column.is_empty()
@@ -167,11 +183,14 @@ impl ScreenTrait for GameSelection {
                         None
                     },
                 );
+
                 let custom_content = GuiWidget::column![custom_editors, create_button]
                     .align_x(iced::Center)
                     .spacing(10);
+
                 let return_button =
                     GuiWidget::button("Return to options").on_press(Action::GoToOptionSelection);
+
                 let content = GuiWidget::column![custom_content, return_button]
                     .align_x(iced::Center)
                     .spacing(20);
