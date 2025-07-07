@@ -1,7 +1,9 @@
-﻿use iced::{Element, Task, widget as GuiWidget, widget::image as GuiImage};
+﻿use std::num::{NonZeroU8, NonZeroU16};
+
+use iced::{Element, Task, widget as GuiWidget, widget::image as GuiImage};
 
 use crate::{
-    core::board::Board,
+    core::board::*,
     gui::{Message as AppMessage, ScreenMessage, ScreenTrait, ScreenType},
 };
 
@@ -16,6 +18,7 @@ pub enum Action {
     ToggleFlag(u8, u8),
     ChordCell(u8, u8),
     CheckGameStatus,
+    ResetGame,
 }
 
 impl Game {
@@ -48,28 +51,39 @@ impl ScreenTrait for Game {
             Action::CheckGameStatus => {
                 let status = self.board.get_state();
                 match status {
-                    crate::core::board::BoardState::InProgress => Task::none(),
-                    crate::core::board::BoardState::Won => {
-                        Task::done(AppMessage::ChangeScreen(ScreenType::MainMenu))
-                    }
-                    crate::core::board::BoardState::Lost => {
-                        Task::done(AppMessage::ChangeScreen(ScreenType::MainMenu))
-                    }
+                    BoardState::InProgress => Task::none(),
+                    BoardState::Won => Task::done(AppMessage::ChangeScreen(ScreenType::MainMenu)),
+                    BoardState::Lost => Task::done(AppMessage::ChangeScreen(ScreenType::MainMenu)),
                 }
+            }
+            Action::ResetGame => {
+                let (rows, columns, mine_count) = (
+                    self.board.get_height(),
+                    self.board.get_width(),
+                    self.board.get_mine_count(),
+                );
+                let new_board = Board::create_custom(
+                    NonZeroU8::new(columns).unwrap(),
+                    NonZeroU8::new(rows).unwrap(),
+                    NonZeroU16::new(mine_count).unwrap(),
+                )
+                .unwrap();
+                self.board = new_board;
+                Task::none()
             }
         }
     }
     fn view(&self) -> Element<'_, Self::Message> {
-        let mut board_column = GuiWidget::Column::with_capacity(self.board.get_height() as usize);
+        let mut board_view = GuiWidget::Column::with_capacity(self.board.get_height() as usize);
         for y in 0..self.board.get_height() {
             let mut row = GuiWidget::Row::with_capacity(self.board.get_width() as usize);
             for x in 0..self.board.get_width() {
                 row = row.push(self.cell(x, y));
             }
-            board_column = board_column.push(row);
+            board_view = board_view.push(row);
         }
-        let board_view = GuiWidget::container(board_column);
-        board_view.center(iced::Length::Fill).into()
+        let content = GuiWidget::container(GuiWidget::column![self.top_menu(), board_view]);
+        content.center(iced::Length::Fill).into()
     }
 }
 
@@ -82,6 +96,13 @@ mod image_default {
 }
 
 impl Game {
+    fn top_menu(&self) -> Element<'_, Action> {
+        let remaining_mines = GuiWidget::text!("{}", self.board.get_remaining_mines());
+        let reset_button = GuiWidget::button(":)").on_press(Action::ResetGame);
+        let timer = GuiWidget::text("PLACEHOLDER");
+        let content = GuiWidget::row![remaining_mines, reset_button, timer];
+        content.into()
+    }
     fn cell_view(cell: &crate::core::cell::Cell) -> Element<'_, Action> {
         #[inline]
         fn cell_container<'a>(element: impl Into<Element<'a, Action>>) -> Element<'a, Action> {

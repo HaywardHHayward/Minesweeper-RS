@@ -107,6 +107,9 @@ impl Board {
     pub const fn get_height(&self) -> u8 {
         self.height.get()
     }
+    pub const fn get_mine_count(&self) -> u16 {
+        self.mine_count.get()
+    }
     pub fn get_remaining_mines(&self) -> i32 {
         // Subtracts how many cells have been flagged from how many mines there are
         (self.mine_count.get() as i32)

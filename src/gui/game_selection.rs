@@ -16,15 +16,15 @@ enum GameSelectionImpl {
 
 #[derive(Debug, Default)]
 struct CustomSelection {
-    row: String,
-    column: String,
+    height: String,
+    width: String,
     mines: String,
 }
 
 #[derive(Debug, Clone)]
 enum TextChangedEnum {
-    Row,
-    Column,
+    Height,
+    Width,
     Mines,
 }
 
@@ -81,8 +81,8 @@ impl ScreenTrait for GameSelection {
             }
             Action::TextChanged(selection, string) => {
                 let GameSelectionImpl::CustomSelection(CustomSelection {
-                    ref mut row,
-                    ref mut column,
+                    ref mut height,
+                    ref mut width,
                     ref mut mines,
                 }) = self.state
                 else {
@@ -92,14 +92,14 @@ impl ScreenTrait for GameSelection {
                     .matches(|ref char| char::is_ascii_digit(char))
                     .collect::<String>();
                 match selection {
-                    TextChangedEnum::Row => {
+                    TextChangedEnum::Height => {
                         if numeric_string.len() <= 2 {
-                            *row = numeric_string;
+                            *height = numeric_string;
                         }
                     }
-                    TextChangedEnum::Column => {
+                    TextChangedEnum::Width => {
                         if numeric_string.len() <= 2 {
-                            *column = numeric_string;
+                            *width = numeric_string;
                         }
                     }
                     TextChangedEnum::Mines => {
@@ -114,15 +114,6 @@ impl ScreenTrait for GameSelection {
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
-        #[inline]
-        fn centered_text<'a>(
-            text: impl Into<GuiWidget::Text<'a>>,
-            fill_strategy: iced::Length,
-        ) -> impl Into<Element<'a, Action>> {
-            GuiWidget::container(text.into())
-                .align_x(iced::Center)
-                .width(fill_strategy)
-        }
         match self.state {
             GameSelectionImpl::OptionSelection => {
                 let beginner = GuiWidget::button(centered_text("Beginning", iced::Fill))
@@ -147,14 +138,14 @@ impl ScreenTrait for GameSelection {
             }
             GameSelectionImpl::CustomSelection(ref custom) => {
                 const EDITOR_WIDTH: f32 = 60.0;
-                let row_text = GuiWidget::text("Rows: ");
-                let row_editor = GuiWidget::text_input("", &custom.row)
-                    .on_input(|input| Action::TextChanged(TextChangedEnum::Row, input))
+                let width_text = GuiWidget::text("Width: ");
+                let width_editor = GuiWidget::text_input("", &custom.width)
+                    .on_input(|input| Action::TextChanged(TextChangedEnum::Width, input))
                     .width(iced::Fill);
 
-                let column_text = GuiWidget::text("Columns: ");
-                let column_editor = GuiWidget::text_input("", &custom.column)
-                    .on_input(|input| Action::TextChanged(TextChangedEnum::Column, input))
+                let height_text = GuiWidget::text("Height: ");
+                let height_editor = GuiWidget::text_input("", &custom.height)
+                    .on_input(|input| Action::TextChanged(TextChangedEnum::Height, input))
                     .width(iced::Fill);
 
                 let mines_text = GuiWidget::text("Mines: ");
@@ -162,10 +153,10 @@ impl ScreenTrait for GameSelection {
                     .on_input(|input| Action::TextChanged(TextChangedEnum::Mines, input))
                     .width(iced::Fill);
 
-                let texts = GuiWidget::column![row_text, column_text, mines_text]
+                let texts = GuiWidget::column![width_text, height_text, mines_text]
                     .spacing(10)
                     .align_x(iced::Left);
-                let editors = GuiWidget::column![row_editor, column_editor, mines_editor]
+                let editors = GuiWidget::column![width_editor, height_editor, mines_editor]
                     .width(EDITOR_WIDTH)
                     .align_x(iced::Right);
 
@@ -174,8 +165,8 @@ impl ScreenTrait for GameSelection {
                     .align_y(iced::Center);
 
                 let create_button = GuiWidget::button("Create board").on_press_maybe(
-                    if !custom.row.is_empty()
-                        && !custom.column.is_empty()
+                    if !custom.height.is_empty()
+                        && !custom.width.is_empty()
                         && !custom.mines.is_empty()
                     {
                         Some(Action::CheckCustom)
@@ -206,4 +197,13 @@ pub enum Options {
     Intermediate,
     Expert,
     Custom,
+}
+#[inline]
+fn centered_text<'a>(
+    text: impl Into<GuiWidget::Text<'a>>,
+    fill_strategy: iced::Length,
+) -> impl Into<Element<'a, Action>> {
+    GuiWidget::container(text.into())
+        .align_x(iced::Center)
+        .width(fill_strategy)
 }
