@@ -107,6 +107,15 @@ impl Board {
     pub const fn get_height(&self) -> u8 {
         self.height.get()
     }
+    pub fn get_remaining_mines(&self) -> i32 {
+        // Subtracts how many cells have been flagged from how many mines there are
+        (self.mine_count.get() as i32)
+            - (self
+                .unopened_coordinates
+                .iter()
+                .filter(|(x, y)| self.get_cell(*x, *y).unwrap().is_flagged())
+                .count() as i32)
+    }
     pub fn open_cell(&mut self, x: u8, y: u8) {
         if !self.unopened_coordinates.contains(&(x, y)) {
             return;
