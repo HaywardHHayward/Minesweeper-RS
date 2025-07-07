@@ -53,7 +53,7 @@ impl Default for Application {
         if !config_dir.exists() {
             std::fs::create_dir_all(&config_dir).expect("Failed to create config directory");
         }
-        let config_path = config_dir.join("config.yml");
+        let config_path = config_dir.join("config.yaml");
         let config = if config_path.exists() {
             config::Config::load(&config_path).unwrap_or_else(|_| {
                 // Placeholder for proper error handling, log it for now and use default config,

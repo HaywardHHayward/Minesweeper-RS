@@ -136,7 +136,7 @@ impl ScreenTrait for GameSelection {
             }
             GameSelectionImpl::CustomSelection(ref custom) => {
                 const EDITOR_WIDTH: f32 = 60.0;
-                let row_text = GuiWidget::text!("Rows: ");
+                let row_text = GuiWidget::text("Rows: ");
                 let row_editor = GuiWidget::text_input("", &custom.row)
                     .on_input(|input| Action::TextChanged(TextChangedEnum::Row, input))
                     .width(iced::Fill);
