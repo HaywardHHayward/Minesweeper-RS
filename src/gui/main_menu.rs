@@ -9,6 +9,7 @@ pub struct MainMenu;
 pub enum Action {
     StartGame,
     Settings,
+    About,
     Exit,
 }
 
@@ -31,6 +32,7 @@ impl ScreenTrait for MainMenu {
                 // it
                 Task::done(AppMessage::ChangeScreen(ScreenType::Settings))
             }
+            Action::About => Task::done(AppMessage::ChangeScreen(ScreenType::About)),
             Action::Exit => iced::exit(),
         }
     }
@@ -40,6 +42,7 @@ impl ScreenTrait for MainMenu {
         let buttons = GuiWidget::column![
             GuiWidget::button("Start Game").on_press(Action::StartGame),
             GuiWidget::button("Settings").on_press(Action::Settings),
+            GuiWidget::button("About").on_press(Action::About),
             GuiWidget::button("Exit").on_press(Action::Exit),
         ]
         .spacing(5)

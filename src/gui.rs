@@ -2,6 +2,10 @@ use std::collections::HashMap;
 
 use iced::{Element, Subscription, Task};
 
+// TODO: Make macro that automatically makes module, ScreenMessage variant,
+// ScreenType variant, and Screen variant for the listed names
+
+pub mod about;
 mod config;
 pub mod game;
 pub mod game_selection;
@@ -75,6 +79,7 @@ impl Default for Application {
             ScreenType::Settings,
             Screen::Settings(settings_screen::SettingsScreen),
         );
+        screens.insert(ScreenType::About, Screen::About(about::About));
         Application {
             current_screen: ScreenType::MainMenu,
             screens,
@@ -166,6 +171,7 @@ pub enum ScreenMessage {
     GameSelection(game_selection::Action),
     Settings(settings_screen::Action),
     Game(game::Action),
+    About(about::Action),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -174,6 +180,7 @@ pub enum ScreenType {
     GameSelection,
     Settings,
     Game,
+    About,
 }
 
 #[derive(Debug)]
@@ -182,6 +189,7 @@ pub enum Screen {
     GameSelection(game_selection::GameSelection),
     Settings(settings_screen::SettingsScreen),
     Game(game::Game),
+    About(about::About),
 }
 
 impl ScreenTrait for Screen {
@@ -196,6 +204,7 @@ impl ScreenTrait for Screen {
                 settings.update(action)
             }
             (Screen::Game(game), ScreenMessage::Game(action)) => game.update(action),
+            (Screen::About(about), ScreenMessage::About(action)) => about.update(action),
             _ => Task::none(),
         }
     }
@@ -207,6 +216,7 @@ impl ScreenTrait for Screen {
             }
             Screen::Settings(settings) => settings.view().map(ScreenMessage::Settings),
             Screen::Game(game) => game.view().map(ScreenMessage::Game),
+            Screen::About(about) => about.view().map(ScreenMessage::About),
         }
     }
     fn subscription(&self) -> Subscription<ScreenMessage> {
@@ -217,6 +227,7 @@ impl ScreenTrait for Screen {
                 .map(ScreenMessage::GameSelection),
             Screen::Settings(settings) => settings.subscription().map(ScreenMessage::Settings),
             Screen::Game(game) => game.subscription().map(ScreenMessage::Game),
+            Screen::About(about) => about.subscription().map(ScreenMessage::About),
         }
     }
 }
