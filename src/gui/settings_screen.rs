@@ -44,13 +44,13 @@ impl ScreenTrait for SettingsScreen {
         let menu_themes = [MenuTheme::Light];
         let menu_theme = GuiWidget::pick_list(
             menu_themes,
-            Some(MenuTheme::Light),
+            Some(self.config.get_menu_theme()),
             Action::MenuThemeSelected,
         );
         let game_themes = [GameTheme::Default];
         let game_theme = GuiWidget::pick_list(
             game_themes,
-            Some(GameTheme::Default),
+            Some(self.config.get_game_theme()),
             Action::GameThemeSelected,
         );
         let options = GuiWidget::column![menu_theme, game_theme,].align_x(iced::Center);

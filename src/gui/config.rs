@@ -65,7 +65,15 @@ impl Config {
         self.theme.menu_theme = menu_theme;
     }
 
+    pub fn get_menu_theme(&self) -> &MenuTheme {
+        &self.theme.menu_theme
+    }
+
     pub fn update_game_theme(&mut self, game_theme: GameTheme) {
         self.theme.game_theme = game_theme;
+    }
+
+    pub fn get_game_theme(&self) -> &GameTheme {
+        &self.theme.game_theme
     }
 }
