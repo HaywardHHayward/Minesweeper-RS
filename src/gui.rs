@@ -77,7 +77,7 @@ impl Default for Application {
         screens.insert(ScreenType::MainMenu, Screen::MainMenu(main_menu::MainMenu));
         screens.insert(
             ScreenType::Settings,
-            Screen::Settings(settings_screen::SettingsScreen),
+            Screen::Settings(settings_screen::SettingsScreen::new(config.clone())),
         );
         screens.insert(ScreenType::About, Screen::About(about::About));
         Application {
@@ -126,6 +126,12 @@ impl ScreenTrait for Application {
                     .unwrap_or_else(|| panic!("current_screen {:?} not found", self.current_screen))
                     .update(screen_message)
             }
+            Message::ReadConfig => {
+                self.config =
+                    config::Config::load(&Self::app_dirs().config_dir().join("config.yaml"))
+                        .unwrap();
+                Task::none()
+            }
         }
     }
     fn view(&self) -> Element<'_, Self::Message> {
@@ -163,6 +169,7 @@ pub enum Message {
     },
     ChangeScreen(ScreenType),
     ScreenAction(ScreenMessage),
+    ReadConfig,
 }
 
 #[derive(Debug)]
@@ -256,6 +263,7 @@ impl std::fmt::Debug for Message {
             }
             Message::ChangeScreen(screen_type) => write!(f, "ChangeScreen({screen_type:?})"),
             Message::ScreenAction(action) => write!(f, "ScreenAction({action:?})"),
+            Message::ReadConfig => write!(f, "ReadConfig"),
         }
     }
 }

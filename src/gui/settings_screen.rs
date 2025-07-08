@@ -1,18 +1,22 @@
 ﻿use iced::{Element, Task, widget as GuiWidget};
 
-use crate::gui::{Message as AppMessage, ScreenTrait, ScreenType};
+use crate::gui::{Application, Message as AppMessage, ScreenTrait, ScreenType, config::*};
 #[derive(Debug)]
-pub struct SettingsScreen;
-
-impl Default for SettingsScreen {
-    fn default() -> Self {
-        SettingsScreen
-    }
+pub struct SettingsScreen {
+    config: Config,
 }
 
 #[derive(Debug, Clone)]
 pub enum Action {
     ReturnToMainMenu,
+    MenuThemeSelected(MenuTheme),
+    GameThemeSelected(GameTheme),
+}
+
+impl SettingsScreen {
+    pub fn new(config: Config) -> Self {
+        Self { config }
+    }
 }
 
 impl ScreenTrait for SettingsScreen {
@@ -20,15 +24,41 @@ impl ScreenTrait for SettingsScreen {
 
     fn update(&mut self, message: Self::Message) -> Task<AppMessage> {
         match message {
-            Action::ReturnToMainMenu => Task::done(AppMessage::ChangeScreen(ScreenType::MainMenu)),
+            Action::ReturnToMainMenu => {
+                self.config
+                    .save(&Application::app_dirs().config_dir().join("config.yaml"));
+                Task::done(AppMessage::ChangeScreen(ScreenType::MainMenu))
+            }
+            Action::MenuThemeSelected(theme) => {
+                self.config.update_menu_theme(theme);
+                Task::none()
+            }
+            Action::GameThemeSelected(game) => {
+                self.config.update_game_theme(game);
+                Task::none()
+            }
         }
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
+        let menu_themes = [MenuTheme::Light];
+        let menu_theme = GuiWidget::pick_list(
+            menu_themes,
+            Some(MenuTheme::Light),
+            Action::MenuThemeSelected,
+        );
+        let game_themes = [GameTheme::Default];
+        let game_theme = GuiWidget::pick_list(
+            game_themes,
+            Some(GameTheme::Default),
+            Action::GameThemeSelected,
+        );
+        let options = GuiWidget::column![menu_theme, game_theme,].align_x(iced::Center);
+
         let buttons = GuiWidget::button("Return to Main Menu").on_press(Action::ReturnToMainMenu);
-        let content = GuiWidget::column![buttons]
+        let content = GuiWidget::column![options, buttons]
             .spacing(20)
-            .align_x(iced::Alignment::Center);
+            .align_x(iced::Center);
         GuiWidget::container(content).center(iced::Fill).into()
     }
 }

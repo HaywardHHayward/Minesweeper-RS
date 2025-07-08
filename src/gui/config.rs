@@ -1,22 +1,49 @@
-﻿use std::{fs::File, path::Path};
+﻿use std::{fmt::Display, fs::File, path::Path};
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 pub struct Config {
     theme: Theme,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 struct Theme {
-    game_theme: (), // Placeholder for game theme
-    menu_theme: (), // Placeholder for menu theme
+    game_theme: GameTheme, // Placeholder for game theme
+    menu_theme: MenuTheme, // Placeholder for menu theme
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
+pub enum GameTheme {
+    Default,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
+pub enum MenuTheme {
+    Light,
+    // TODO: Dark
+}
+
+impl Display for GameTheme {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            GameTheme::Default => "Default",
+        })
+    }
+}
+
+impl Display for MenuTheme {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            MenuTheme::Light => "Light",
+        })
+    }
 }
 
 impl Default for Config {
     fn default() -> Self {
         Config {
             theme: Theme {
-                game_theme: (), // Default game theme placeholder
-                menu_theme: (), // Default menu theme placeholder
+                game_theme: GameTheme::Default,
+                menu_theme: MenuTheme::Light,
             },
         }
     }
@@ -32,5 +59,13 @@ impl Config {
         let config_file = File::open(load_location).expect("Failed to open config file");
         let config = serde_yml::from_reader(config_file)?;
         Ok(config)
+    }
+
+    pub fn update_menu_theme(&mut self, menu_theme: MenuTheme) {
+        self.theme.menu_theme = menu_theme;
+    }
+
+    pub fn update_game_theme(&mut self, game_theme: GameTheme) {
+        self.theme.game_theme = game_theme;
     }
 }
