@@ -27,11 +27,7 @@ impl ScreenTrait for MainMenu {
                 }),
                 change_screen: true,
             }),
-            Action::Settings => {
-                // TODO: Provide function to initialize settings screen, then change screen to
-                // it
-                Task::done(AppMessage::ChangeScreen(ScreenType::Settings))
-            }
+            Action::Settings => Task::done(AppMessage::ChangeScreen(ScreenType::SettingsScreen)),
             Action::About => Task::done(AppMessage::ChangeScreen(ScreenType::About)),
             Action::Exit => iced::exit(),
         }
