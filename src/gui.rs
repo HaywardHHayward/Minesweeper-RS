@@ -5,12 +5,7 @@ use iced::{Element, Subscription, Task};
 // TODO: Make macro that automatically makes module, ScreenMessage variant,
 // ScreenType variant, and Screen variant for the listed names
 
-pub mod about;
 mod config;
-pub mod game;
-pub mod game_selection;
-pub mod main_menu;
-pub mod settings_screen;
 
 pub fn update(state: &mut Application, message: Message) -> Task<Message> {
     state.update(message)
@@ -76,8 +71,8 @@ impl Default for Application {
         let mut screens = HashMap::with_capacity(3);
         screens.insert(ScreenType::MainMenu, Screen::MainMenu(main_menu::MainMenu));
         screens.insert(
-            ScreenType::Settings,
-            Screen::Settings(settings_screen::SettingsScreen::new(config.clone())),
+            ScreenType::SettingsScreen,
+            Screen::SettingsScreen(settings_screen::SettingsScreen::new(config.clone())),
         );
         screens.insert(ScreenType::About, Screen::About(about::About));
         Application {
@@ -157,6 +152,55 @@ impl ScreenTrait for Application {
 
 type Callback<Output> = Box<dyn FnOnce() -> Output + Send + Sync>;
 
+macro_rules! create_screens {
+    ($([$snake_case:ident, $pascal_case:ident]),*) => {
+        $(pub mod $snake_case;)*
+
+        #[derive(Debug)]
+        pub enum ScreenMessage {
+            $($pascal_case($snake_case::Action),)*
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+        pub enum ScreenType {
+            $($pascal_case,)*
+        }
+
+        #[derive(Debug)]
+        pub enum Screen {
+            $($pascal_case($snake_case::$pascal_case),)*
+        }
+
+        impl ScreenTrait for Screen {
+            type Message = ScreenMessage;
+            fn update(&mut self, message: ScreenMessage) -> Task<Message> {
+                match (self, message) {
+                    $((Screen::$pascal_case($snake_case), ScreenMessage::$pascal_case(action)) => $snake_case.update(action),)*
+                    _ => Task::none()
+                }
+            }
+            fn view(&self) -> Element<'_, Self::Message> {
+                match self {
+                    $(Screen::$pascal_case($snake_case) => $snake_case.view().map(ScreenMessage::$pascal_case),)*
+                }
+            }
+            fn subscription(&self) -> Subscription<Self::Message> {
+                match self {
+                    $(Screen::$pascal_case($snake_case) => $snake_case.subscription().map(ScreenMessage::$pascal_case),)*
+                }
+            }
+        }
+    };
+}
+
+create_screens! {
+    [about, About],
+    [game, Game],
+    [game_selection, GameSelection],
+    [main_menu, MainMenu],
+    [settings_screen, SettingsScreen]
+}
+
 pub enum Message {
     InitializeScreen {
         screen_type: ScreenType,
@@ -170,73 +214,6 @@ pub enum Message {
     ChangeScreen(ScreenType),
     ScreenAction(ScreenMessage),
     ReadConfig,
-}
-
-#[derive(Debug)]
-pub enum ScreenMessage {
-    MainMenu(main_menu::Action),
-    GameSelection(game_selection::Action),
-    Settings(settings_screen::Action),
-    Game(game::Action),
-    About(about::Action),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ScreenType {
-    MainMenu,
-    GameSelection,
-    Settings,
-    Game,
-    About,
-}
-
-#[derive(Debug)]
-pub enum Screen {
-    MainMenu(main_menu::MainMenu),
-    GameSelection(game_selection::GameSelection),
-    Settings(settings_screen::SettingsScreen),
-    Game(game::Game),
-    About(about::About),
-}
-
-impl ScreenTrait for Screen {
-    type Message = ScreenMessage;
-    fn update(&mut self, message: ScreenMessage) -> Task<Message> {
-        match (self, message) {
-            (Screen::MainMenu(menu), ScreenMessage::MainMenu(action)) => menu.update(action),
-            (Screen::GameSelection(game_selection), ScreenMessage::GameSelection(action)) => {
-                game_selection.update(action)
-            }
-            (Screen::Settings(settings), ScreenMessage::Settings(action)) => {
-                settings.update(action)
-            }
-            (Screen::Game(game), ScreenMessage::Game(action)) => game.update(action),
-            (Screen::About(about), ScreenMessage::About(action)) => about.update(action),
-            _ => Task::none(),
-        }
-    }
-    fn view(&self) -> Element<'_, ScreenMessage> {
-        match self {
-            Screen::MainMenu(menu) => menu.view().map(ScreenMessage::MainMenu),
-            Screen::GameSelection(game_selection) => {
-                game_selection.view().map(ScreenMessage::GameSelection)
-            }
-            Screen::Settings(settings) => settings.view().map(ScreenMessage::Settings),
-            Screen::Game(game) => game.view().map(ScreenMessage::Game),
-            Screen::About(about) => about.view().map(ScreenMessage::About),
-        }
-    }
-    fn subscription(&self) -> Subscription<ScreenMessage> {
-        match self {
-            Screen::MainMenu(menu) => menu.subscription().map(ScreenMessage::MainMenu),
-            Screen::GameSelection(game_selection) => game_selection
-                .subscription()
-                .map(ScreenMessage::GameSelection),
-            Screen::Settings(settings) => settings.subscription().map(ScreenMessage::Settings),
-            Screen::Game(game) => game.subscription().map(ScreenMessage::Game),
-            Screen::About(about) => about.subscription().map(ScreenMessage::About),
-        }
-    }
 }
 
 impl std::fmt::Debug for Message {
