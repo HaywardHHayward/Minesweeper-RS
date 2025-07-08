@@ -23,7 +23,7 @@ pub enum Action {
 
 impl Game {
     pub fn new(board: Board) -> Self {
-        Game { board }
+        Self { board }
     }
 }
 
@@ -32,23 +32,23 @@ impl ScreenTrait for Game {
 
     fn update(&mut self, message: Self::Message) -> Task<AppMessage> {
         match message {
-            Action::OpenCell(x, y) => {
+            Self::Message::OpenCell(x, y) => {
                 self.board.open_cell(x, y);
                 Task::done(AppMessage::ScreenAction(ScreenMessage::Game(
-                    Action::CheckGameStatus,
+                    Self::Message::CheckGameStatus,
                 )))
             }
-            Action::ToggleFlag(x, y) => {
+            Self::Message::ToggleFlag(x, y) => {
                 self.board.toggle_flag(x, y);
                 Task::none()
             }
-            Action::ChordCell(x, y) => {
+            Self::Message::ChordCell(x, y) => {
                 self.board.chord_cell(x, y);
                 Task::done(AppMessage::ScreenAction(ScreenMessage::Game(
-                    Action::CheckGameStatus,
+                    Self::Message::CheckGameStatus,
                 )))
             }
-            Action::CheckGameStatus => {
+            Self::Message::CheckGameStatus => {
                 let status = self.board.get_state();
                 match status {
                     BoardState::InProgress => Task::none(),
@@ -56,7 +56,7 @@ impl ScreenTrait for Game {
                     BoardState::Lost => Task::done(AppMessage::ChangeScreen(ScreenType::MainMenu)),
                 }
             }
-            Action::ResetGame => {
+            Self::Message::ResetGame => {
                 let (rows, columns, mine_count) = (
                     self.board.get_height(),
                     self.board.get_width(),

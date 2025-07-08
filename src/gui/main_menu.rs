@@ -2,7 +2,7 @@
 
 use crate::gui::{Message as AppMessage, ScreenTrait, ScreenType};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct MainMenu;
 
 #[derive(Debug, Clone)]
@@ -18,7 +18,7 @@ impl ScreenTrait for MainMenu {
 
     fn update(&mut self, message: Self::Message) -> Task<AppMessage> {
         match message {
-            Action::StartGame => Task::done(AppMessage::InitializeScreen {
+            Self::Message::StartGame => Task::done(AppMessage::InitializeScreen {
                 screen_type: ScreenType::GameSelection,
                 initializer_fn: Box::new(|| {
                     crate::gui::Screen::GameSelection(
@@ -27,19 +27,21 @@ impl ScreenTrait for MainMenu {
                 }),
                 change_screen: true,
             }),
-            Action::Settings => Task::done(AppMessage::ChangeScreen(ScreenType::SettingsScreen)),
-            Action::About => Task::done(AppMessage::ChangeScreen(ScreenType::About)),
-            Action::Exit => iced::exit(),
+            Self::Message::Settings => {
+                Task::done(AppMessage::ChangeScreen(ScreenType::SettingsScreen))
+            }
+            Self::Message::About => Task::done(AppMessage::ChangeScreen(ScreenType::About)),
+            Self::Message::Exit => iced::exit(),
         }
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
         let title = GuiWidget::text("Minesweeper").size(50);
         let buttons = GuiWidget::column![
-            GuiWidget::button("Start Game").on_press(Action::StartGame),
-            GuiWidget::button("Settings").on_press(Action::Settings),
-            GuiWidget::button("About").on_press(Action::About),
-            GuiWidget::button("Exit").on_press(Action::Exit),
+            GuiWidget::button("Start Game").on_press(Self::Message::StartGame),
+            GuiWidget::button("Settings").on_press(Self::Message::Settings),
+            GuiWidget::button("About").on_press(Self::Message::About),
+            GuiWidget::button("Exit").on_press(Self::Message::Exit),
         ]
         .spacing(5)
         .align_x(iced::Alignment::Center);

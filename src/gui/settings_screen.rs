@@ -1,6 +1,6 @@
-﻿use iced::{Element, Task, widget as GuiWidget};
+﻿use iced::{widget as GuiWidget, Element, Task};
 
-use crate::gui::{Application, Message as AppMessage, ScreenTrait, ScreenType, config::*};
+use crate::gui::{config::*, Application, Message as AppMessage, ScreenTrait, ScreenType};
 #[derive(Debug)]
 pub struct SettingsScreen {
     config: Config,
@@ -24,16 +24,16 @@ impl ScreenTrait for SettingsScreen {
 
     fn update(&mut self, message: Self::Message) -> Task<AppMessage> {
         match message {
-            Action::ReturnToMainMenu => {
+            Self::Message::ReturnToMainMenu => {
                 self.config
                     .save(&Application::app_dirs().config_dir().join("config.yaml"));
                 Task::done(AppMessage::ChangeScreen(ScreenType::MainMenu))
             }
-            Action::MenuThemeSelected(theme) => {
+            Self::Message::MenuThemeSelected(theme) => {
                 self.config.update_menu_theme(theme);
                 Task::none()
             }
-            Action::GameThemeSelected(game) => {
+            Self::Message::GameThemeSelected(game) => {
                 self.config.update_game_theme(game);
                 Task::none()
             }
@@ -45,17 +45,18 @@ impl ScreenTrait for SettingsScreen {
         let menu_theme = GuiWidget::pick_list(
             menu_themes,
             Some(self.config.get_menu_theme()),
-            Action::MenuThemeSelected,
+            Self::Message::MenuThemeSelected,
         );
         let game_themes = [GameTheme::Default];
         let game_theme = GuiWidget::pick_list(
             game_themes,
             Some(self.config.get_game_theme()),
-            Action::GameThemeSelected,
+            Self::Message::GameThemeSelected,
         );
         let options = GuiWidget::column![menu_theme, game_theme,].align_x(iced::Center);
 
-        let buttons = GuiWidget::button("Return to Main Menu").on_press(Action::ReturnToMainMenu);
+        let buttons =
+            GuiWidget::button("Return to Main Menu").on_press(Self::Message::ReturnToMainMenu);
         let content = GuiWidget::column![options, buttons]
             .spacing(20)
             .align_x(iced::Center);

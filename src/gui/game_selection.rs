@@ -1,4 +1,4 @@
-﻿use iced::{Element, Task, widget as GuiWidget};
+﻿use iced::{widget as GuiWidget, Element, Task};
 
 use crate::gui::{Message as AppMessage, ScreenMessage, ScreenTrait};
 
@@ -43,7 +43,7 @@ impl ScreenTrait for GameSelection {
 
     fn update(&mut self, message: Self::Message) -> Task<AppMessage> {
         match message {
-            Action::StartGame(options) => {
+            Self::Message::StartGame(options) => {
                 let board = match options {
                     Options::Beginner => crate::core::board::Board::create_beginner(),
                     Options::Intermediate => crate::core::board::Board::create_intermediate(),
@@ -51,7 +51,7 @@ impl ScreenTrait for GameSelection {
                     Options::Custom => {
                         // Short-circuit, go to custom board screen for setup
                         return Task::done(AppMessage::ScreenAction(ScreenMessage::GameSelection(
-                            Action::GoToCustom,
+                            Self::Message::GoToCustom,
                         )));
                     }
                 };
@@ -62,24 +62,24 @@ impl ScreenTrait for GameSelection {
                     change_screen: true,
                 })
             }
-            Action::GoToCustom => {
+            Self::Message::GoToCustom => {
                 // Transition to custom selection screen
                 self.state = GameSelectionImpl::CustomSelection(CustomSelection::default());
                 Task::none()
             }
-            Action::GoToOptionSelection => {
+            Self::Message::GoToOptionSelection => {
                 // Return to option selection
                 self.state = GameSelectionImpl::OptionSelection;
                 Task::none()
             }
-            Action::CheckCustom => {
+            Self::Message::CheckCustom => {
                 // Validate custom options and start the game if valid
                 Task::none()
             }
-            Action::ReturnToMainMenu => {
+            Self::Message::ReturnToMainMenu => {
                 Task::done(AppMessage::ChangeScreen(crate::gui::ScreenType::MainMenu))
             }
-            Action::TextChanged(selection, string) => {
+            Self::Message::TextChanged(selection, string) => {
                 let GameSelectionImpl::CustomSelection(CustomSelection {
                     ref mut height,
                     ref mut width,
@@ -117,19 +117,19 @@ impl ScreenTrait for GameSelection {
         match self.state {
             GameSelectionImpl::OptionSelection => {
                 let beginner = GuiWidget::button(centered_text("Beginning", iced::Fill))
-                    .on_press(Action::StartGame(Options::Beginner));
+                    .on_press(Self::Message::StartGame(Options::Beginner));
                 let intermediate = GuiWidget::button(centered_text("Intermediate", iced::Shrink))
-                    .on_press(Action::StartGame(Options::Intermediate));
+                    .on_press(Self::Message::StartGame(Options::Intermediate));
                 let expert = GuiWidget::button(centered_text("Expert", iced::Fill))
-                    .on_press(Action::StartGame(Options::Expert));
+                    .on_press(Self::Message::StartGame(Options::Expert));
                 let custom = GuiWidget::button(centered_text("Custom", iced::Fill))
-                    .on_press(Action::StartGame(Options::Custom));
+                    .on_press(Self::Message::StartGame(Options::Custom));
 
                 let options =
                     GuiWidget::column![beginner, intermediate, expert, custom].width(iced::Shrink);
 
-                let return_to_menu =
-                    GuiWidget::button("Return to main menu").on_press(Action::ReturnToMainMenu);
+                let return_to_menu = GuiWidget::button("Return to main menu")
+                    .on_press(Self::Message::ReturnToMainMenu);
 
                 let content = GuiWidget::column![options, return_to_menu]
                     .align_x(iced::Center)
@@ -140,17 +140,17 @@ impl ScreenTrait for GameSelection {
                 const EDITOR_WIDTH: f32 = 60.0;
                 let width_text = GuiWidget::text("Width: ");
                 let width_editor = GuiWidget::text_input("", &custom.width)
-                    .on_input(|input| Action::TextChanged(TextChangedEnum::Width, input))
+                    .on_input(|input| Self::Message::TextChanged(TextChangedEnum::Width, input))
                     .width(iced::Fill);
 
                 let height_text = GuiWidget::text("Height: ");
                 let height_editor = GuiWidget::text_input("", &custom.height)
-                    .on_input(|input| Action::TextChanged(TextChangedEnum::Height, input))
+                    .on_input(|input| Self::Message::TextChanged(TextChangedEnum::Height, input))
                     .width(iced::Fill);
 
                 let mines_text = GuiWidget::text("Mines: ");
                 let mines_editor = GuiWidget::text_input("", &custom.mines)
-                    .on_input(|input| Action::TextChanged(TextChangedEnum::Mines, input))
+                    .on_input(|input| Self::Message::TextChanged(TextChangedEnum::Mines, input))
                     .width(iced::Fill);
 
                 let texts = GuiWidget::column![width_text, height_text, mines_text]
@@ -169,7 +169,7 @@ impl ScreenTrait for GameSelection {
                         && !custom.width.is_empty()
                         && !custom.mines.is_empty()
                     {
-                        Some(Action::CheckCustom)
+                        Some(Self::Message::CheckCustom)
                     } else {
                         None
                     },
@@ -179,8 +179,8 @@ impl ScreenTrait for GameSelection {
                     .align_x(iced::Center)
                     .spacing(10);
 
-                let return_button =
-                    GuiWidget::button("Return to options").on_press(Action::GoToOptionSelection);
+                let return_button = GuiWidget::button("Return to options")
+                    .on_press(Self::Message::GoToOptionSelection);
 
                 let content = GuiWidget::column![custom_content, return_button]
                     .align_x(iced::Center)

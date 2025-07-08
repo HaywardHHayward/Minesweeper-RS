@@ -152,6 +152,7 @@ impl ScreenTrait for Application {
 
 type Callback<Output> = Box<dyn FnOnce() -> Output + Send + Sync>;
 
+// DO NOT USE OUTSIDE OF THIS FILE, uses unqualified names
 macro_rules! create_screens {
     ($([$snake_case:ident, $pascal_case:ident]),*) => {
         $(pub mod $snake_case;)*
@@ -173,20 +174,20 @@ macro_rules! create_screens {
 
         impl ScreenTrait for Screen {
             type Message = ScreenMessage;
-            fn update(&mut self, message: ScreenMessage) -> Task<Message> {
+            fn update(&mut self, message: Self::Message) -> Task<Message> {
                 match (self, message) {
-                    $((Screen::$pascal_case($snake_case), ScreenMessage::$pascal_case(action)) => $snake_case.update(action),)*
+                    $((Self::$pascal_case($snake_case), Self::Message::$pascal_case(action)) => $snake_case.update(action),)*
                     _ => Task::none()
                 }
             }
             fn view(&self) -> Element<'_, Self::Message> {
                 match self {
-                    $(Screen::$pascal_case($snake_case) => $snake_case.view().map(ScreenMessage::$pascal_case),)*
+                    $(Self::$pascal_case($snake_case) => $snake_case.view().map(Self::Message::$pascal_case),)*
                 }
             }
             fn subscription(&self) -> Subscription<Self::Message> {
                 match self {
-                    $(Screen::$pascal_case($snake_case) => $snake_case.subscription().map(ScreenMessage::$pascal_case),)*
+                    $(Self::$pascal_case($snake_case) => $snake_case.subscription().map(Self::Message::$pascal_case),)*
                 }
             }
         }

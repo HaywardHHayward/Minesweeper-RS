@@ -7,7 +7,7 @@ pub enum Action {
     ReturnToMainMenu,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct About;
 
 impl ScreenTrait for About {
@@ -15,7 +15,7 @@ impl ScreenTrait for About {
 
     fn update(&mut self, message: Self::Message) -> Task<AppMessage> {
         match message {
-            Action::ReturnToMainMenu => {
+            Self::Message::ReturnToMainMenu => {
                 Task::done(AppMessage::ChangeScreen(crate::gui::ScreenType::MainMenu))
             }
         }
