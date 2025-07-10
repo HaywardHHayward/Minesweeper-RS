@@ -44,9 +44,7 @@ impl ScreenTrait for Game {
         match message {
             Self::Message::OpenCell(x, y) => {
                 self.board.open_cell(x, y);
-                Task::done(AppMessage::ScreenAction(ScreenMessage::Game(
-                    Self::Message::CheckGameStatus,
-                )))
+                Task::none()
             }
             Self::Message::ToggleFlag(x, y) => {
                 self.board.toggle_flag(x, y);
@@ -54,17 +52,7 @@ impl ScreenTrait for Game {
             }
             Self::Message::ChordCell(x, y) => {
                 self.board.chord_cell(x, y);
-                Task::done(AppMessage::ScreenAction(ScreenMessage::Game(
-                    Self::Message::CheckGameStatus,
-                )))
-            }
-            Self::Message::CheckGameStatus => {
-                let status = self.board.get_state();
-                match status {
-                    BoardState::InProgress => Task::none(),
-                    BoardState::Won => Task::done(AppMessage::ChangeScreen(ScreenType::MainMenu)),
-                    BoardState::Lost => Task::done(AppMessage::ChangeScreen(ScreenType::MainMenu)),
-                }
+                Task::none()
             }
             Self::Message::ResetGame => {
                 let (rows, columns, mine_count) = (
@@ -194,10 +182,15 @@ impl Game {
     fn cell(&self, x: u8, y: u8) -> Element<'_, Action> {
         let cell = self.board.get_cell(x, y).expect("Cell should exist");
         let cell_view = Game::cell_view(cell);
-        GuiWidget::mouse_area(cell_view)
-            .on_press(Action::OpenCell(x, y))
-            .on_right_press(Action::ToggleFlag(x, y))
-            .on_middle_press(Action::ChordCell(x, y))
-            .into()
+        let is_playing = matches!(self.board.get_state(), BoardState::InProgress);
+        if is_playing {
+            GuiWidget::mouse_area(cell_view)
+                .on_press(Action::OpenCell(x, y))
+                .on_right_press(Action::ToggleFlag(x, y))
+                .on_middle_press(Action::ChordCell(x, y))
+                .into()
+        } else {
+            cell_view
+        }
     }
 }
