@@ -1,15 +1,20 @@
-﻿use std::num::{NonZeroU8, NonZeroU16};
+﻿use std::{
+    num::{NonZeroU8, NonZeroU16},
+    time::Instant,
+};
 
-use iced::{Element, Task, widget as GuiWidget, widget::image as GuiImage};
+use iced::{Element, Subscription, Task, widget as GuiWidget, widget::image as GuiImage};
 
 use crate::{
-    core::board::*,
+    core::{board::*, cell::*},
     gui::{Message as AppMessage, ScreenMessage, ScreenTrait, ScreenType},
 };
 
 #[derive(Debug)]
 pub struct Game {
     board: Board,
+    start_time: Instant,
+    current_time: Instant,
 }
 
 #[derive(Debug, Clone)]
@@ -17,13 +22,18 @@ pub enum Action {
     OpenCell(u8, u8),
     ToggleFlag(u8, u8),
     ChordCell(u8, u8),
-    CheckGameStatus,
     ResetGame,
+    TimeUpdate(Instant),
 }
 
 impl Game {
     pub fn new(board: Board) -> Self {
-        Self { board }
+        let game_start = Instant::now();
+        Self {
+            board,
+            start_time: game_start,
+            current_time: game_start,
+        }
     }
 }
 
@@ -68,7 +78,14 @@ impl ScreenTrait for Game {
                     NonZeroU16::new(mine_count).unwrap(),
                 )
                 .unwrap();
+                let new_start = Instant::now();
+                self.start_time = new_start;
+                self.current_time = new_start;
                 self.board = new_board;
+                Task::none()
+            }
+            Self::Message::TimeUpdate(time) => {
+                self.current_time = time;
                 Task::none()
             }
         }
@@ -82,8 +99,16 @@ impl ScreenTrait for Game {
             }
             board_view = board_view.push(row);
         }
-        let content = GuiWidget::container(GuiWidget::column![self.top_menu(), board_view]);
+        let content = GuiWidget::container(GuiWidget::column![self.top_menu().into(), board_view]);
         content.center(iced::Length::Fill).into()
+    }
+    fn subscription(&self) -> Subscription<Self::Message> {
+        match self.board.get_state() {
+            BoardState::InProgress => {
+                iced::time::every(std::time::Duration::from_secs(1)).map(Self::Message::TimeUpdate)
+            }
+            BoardState::Won | BoardState::Lost => Subscription::none(),
+        }
     }
 }
 
@@ -96,14 +121,25 @@ mod image_default {
 }
 
 impl Game {
-    fn top_menu(&self) -> Element<'_, Action> {
+    fn top_menu(&self) -> impl Into<Element<'_, Action>> {
         let remaining_mines = GuiWidget::text!("{}", self.board.get_remaining_mines());
         let reset_button = GuiWidget::button(":)").on_press(Action::ResetGame);
-        let timer = GuiWidget::text("PLACEHOLDER");
-        let content = GuiWidget::row![remaining_mines, reset_button, timer];
-        content.into()
+        let time_elapsed = self.current_time - self.start_time;
+        let timer = GuiWidget::text!("{}", time_elapsed.as_secs());
+        let content = GuiWidget::row![
+            GuiWidget::container(remaining_mines)
+                .align_x(iced::Left)
+                .width(iced::Fill),
+            GuiWidget::container(reset_button)
+                .align_x(iced::Center)
+                .width(iced::Fill),
+            GuiWidget::container(timer)
+                .align_x(iced::Right)
+                .width(iced::Fill)
+        ];
+        content.width((self.board.get_width() as usize * 16) as f32)
     }
-    fn cell_view(cell: &crate::core::cell::Cell) -> Element<'_, Action> {
+    fn cell_view(cell: &Cell) -> Element<'_, Action> {
         #[inline]
         fn cell_container<'a>(element: impl Into<Element<'a, Action>>) -> Element<'a, Action> {
             GuiWidget::container(element)
