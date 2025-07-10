@@ -7,7 +7,7 @@ use iced::{Element, Subscription, Task, widget as GuiWidget, widget::image as Gu
 
 use crate::{
     core::{board::*, cell::*},
-    gui::{Message as AppMessage, ScreenMessage, ScreenTrait, ScreenType},
+    gui::{Message as AppMessage, ScreenTrait, ScreenType},
 };
 
 #[derive(Debug)]
@@ -24,6 +24,7 @@ pub enum Action {
     ChordCell(u8, u8),
     ResetGame,
     TimeUpdate(Instant),
+    ReturnToMainMenu,
 }
 
 impl Game {
@@ -76,6 +77,9 @@ impl ScreenTrait for Game {
                 self.current_time = time;
                 Task::none()
             }
+            Self::Message::ReturnToMainMenu => {
+                Task::done(AppMessage::ChangeScreen(ScreenType::MainMenu))
+            }
         }
     }
     fn view(&self) -> Element<'_, Self::Message> {
@@ -87,8 +91,28 @@ impl ScreenTrait for Game {
             }
             board_view = board_view.push(row);
         }
-        let content = GuiWidget::container(GuiWidget::column![self.top_menu().into(), board_view]);
-        content.center(iced::Length::Fill).into()
+        let mut game_content =
+            GuiWidget::column![self.top_menu().into(), board_view].align_x(iced::Center);
+        let extra_content = match self.board.get_state() {
+            BoardState::InProgress => None,
+            BoardState::Won => {
+                let win_text = GuiWidget::text("You found all the mines. You win!");
+                let return_button = GuiWidget::button("Return to main menu")
+                    .on_press(Self::Message::ReturnToMainMenu);
+                let content = GuiWidget::column![win_text, return_button].align_x(iced::Center);
+                Some(content)
+            }
+            BoardState::Lost => {
+                let lose_text = GuiWidget::text("You hit a mine! You lose!");
+                let return_button = GuiWidget::button("Return to main menu")
+                    .on_press(Self::Message::ReturnToMainMenu);
+                let content = GuiWidget::column![lose_text, return_button].align_x(iced::Center);
+                Some(content)
+            }
+        };
+        game_content = game_content.push_maybe(extra_content);
+        let content = GuiWidget::container(game_content).center(iced::Fill);
+        content.into()
     }
     fn subscription(&self) -> Subscription<Self::Message> {
         match self.board.get_state() {
@@ -127,7 +151,7 @@ impl Game {
         ];
         content.width((self.board.get_width() as usize * 16) as f32)
     }
-    fn cell_view(cell: &Cell) -> Element<'_, Action> {
+    fn cell_view(cell: &Cell) -> impl Into<Element<'_, Action>> {
         #[inline]
         fn cell_container<'a>(element: impl Into<Element<'a, Action>>) -> Element<'a, Action> {
             GuiWidget::container(element)
@@ -177,7 +201,7 @@ impl Game {
                 stack = stack.push(flag_image);
             }
         }
-        stack.width(16).height(16).into()
+        stack.width(16).height(16)
     }
     fn cell(&self, x: u8, y: u8) -> Element<'_, Action> {
         let cell = self.board.get_cell(x, y).expect("Cell should exist");
@@ -190,7 +214,7 @@ impl Game {
                 .on_middle_press(Action::ChordCell(x, y))
                 .into()
         } else {
-            cell_view
+            cell_view.into()
         }
     }
 }
