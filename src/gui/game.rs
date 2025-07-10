@@ -3,7 +3,7 @@
     time::Instant,
 };
 
-use iced::{Element, Subscription, Task, widget as GuiWidget, widget::image as GuiImage};
+use iced::{Element, Font, Subscription, Task, widget as GuiWidget, widget::image as GuiImage};
 
 use crate::{
     core::{board::*, cell::*},
@@ -136,15 +136,24 @@ impl Game {
     fn top_menu(&self) -> impl Into<Element<'_, Action>> {
         let remaining_mines = GuiWidget::text!("{}", self.board.get_remaining_mines());
         let reset_button = GuiWidget::button(":)").on_press(Action::ResetGame);
-        let time_elapsed = self.current_time - self.start_time;
-        let timer = GuiWidget::text!("{}", time_elapsed.as_secs());
+        let time_elapsed = (self.current_time - self.start_time).as_secs();
+        let timer = if time_elapsed < 60 {
+            GuiWidget::text!("{time_elapsed:02}").font(Font::MONOSPACE)
+        } else if time_elapsed < (99 * 60) + 59 {
+            GuiWidget::text!(
+                "{minutes}:{seconds:02}",
+                minutes = time_elapsed.div_euclid(60),
+                seconds = time_elapsed.rem_euclid(60)
+            )
+            .font(Font::MONOSPACE)
+        } else {
+            GuiWidget::text("99:59").font(Font::MONOSPACE)
+        };
         let content = GuiWidget::row![
             GuiWidget::container(remaining_mines)
                 .align_x(iced::Left)
                 .width(iced::Fill),
-            GuiWidget::container(reset_button)
-                .align_x(iced::Center)
-                .width(iced::Fill),
+            GuiWidget::container(reset_button).align_x(iced::Center),
             GuiWidget::container(timer)
                 .align_x(iced::Right)
                 .width(iced::Fill)
