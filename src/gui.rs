@@ -2,9 +2,6 @@ use std::collections::HashMap;
 
 use iced::{Element, Subscription, Task};
 
-// TODO: Make macro that automatically makes module, ScreenMessage variant,
-// ScreenType variant, and Screen variant for the listed names
-
 mod config;
 
 pub fn update(state: &mut Application, message: Message) -> Task<Message> {
@@ -152,7 +149,9 @@ impl ScreenTrait for Application {
 
 type Callback<Output> = Box<dyn FnOnce() -> Output + Send + Sync>;
 
-// DO NOT USE OUTSIDE OF THIS FILE, uses unqualified names
+// Automatically adds new screen modules, new variants to ScreenMessage and
+// ScreenType, and automatically adds the new screen types to Screen::update,
+// Screen::view, and Screen::subscription
 macro_rules! create_screens {
     ($([$snake_case:ident, $pascal_case:ident]),*) => {
         $(pub mod $snake_case;)*
