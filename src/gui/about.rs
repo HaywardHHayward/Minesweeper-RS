@@ -50,6 +50,6 @@ impl ScreenTrait for About {
             .align_x(iced::Center)
             .spacing(20);
 
-        GuiWidget::container(content).center(iced::Fill).into()
+        GuiWidget::center(content).into()
     }
 }

@@ -111,7 +111,7 @@ impl ScreenTrait for Game {
             }
         };
         game_content = game_content.push_maybe(extra_content);
-        let content = GuiWidget::container(game_content).center(iced::Fill);
+        let content = GuiWidget::center(game_content);
         content.into()
     }
     fn subscription(&self) -> Subscription<Self::Message> {
@@ -138,7 +138,7 @@ impl Game {
         let reset_button = GuiWidget::button(":)").on_press(Action::ResetGame);
         let time_elapsed = (self.current_time - self.start_time).as_secs();
         let timer = if time_elapsed < 60 {
-            GuiWidget::text!("{time_elapsed:02}").font(Font::MONOSPACE)
+            GuiWidget::text!("{time_elapsed}").font(Font::MONOSPACE)
         } else if time_elapsed < (99 * 60) + 59 {
             GuiWidget::text!(
                 "{minutes}:{seconds:02}",
@@ -150,24 +150,16 @@ impl Game {
             GuiWidget::text("99:59").font(Font::MONOSPACE)
         };
         let content = GuiWidget::row![
-            GuiWidget::container(remaining_mines)
-                .align_x(iced::Left)
-                .width(iced::Fill),
-            GuiWidget::container(reset_button).align_x(iced::Center),
-            GuiWidget::container(timer)
-                .align_x(iced::Right)
-                .width(iced::Fill)
+            GuiWidget::container(remaining_mines).width(iced::Fill),
+            GuiWidget::center_x(reset_button),
+            GuiWidget::right(timer)
         ];
         content.width((self.board.get_width() as usize * 16) as f32)
     }
     fn cell_view(cell: &Cell) -> impl Into<Element<'_, Action>> {
         #[inline]
         fn cell_container<'a>(element: impl Into<Element<'a, Action>>) -> Element<'a, Action> {
-            GuiWidget::container(element)
-                .width(16)
-                .height(16)
-                .center(iced::Fill)
-                .into()
+            GuiWidget::center(element).width(16).height(16).into()
         }
         let mut stack = GuiWidget::Stack::with_capacity(2).height(16).width(16);
         if cell.is_open() {

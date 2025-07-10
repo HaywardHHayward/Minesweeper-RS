@@ -48,6 +48,6 @@ impl ScreenTrait for MainMenu {
         let content = GuiWidget::column![title, buttons]
             .spacing(20)
             .align_x(iced::Alignment::Center);
-        GuiWidget::container(content).center(iced::Fill).into()
+        GuiWidget::center(content).into()
     }
 }

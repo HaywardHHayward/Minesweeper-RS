@@ -1,6 +1,6 @@
-﻿use iced::{widget as GuiWidget, Element, Task};
+﻿use iced::{Element, Task, widget as GuiWidget};
 
-use crate::gui::{config::*, Application, Message as AppMessage, ScreenTrait, ScreenType};
+use crate::gui::{Application, Message as AppMessage, ScreenTrait, ScreenType, config::*};
 #[derive(Debug)]
 pub struct SettingsScreen {
     config: Config,
@@ -60,6 +60,6 @@ impl ScreenTrait for SettingsScreen {
         let content = GuiWidget::column![options, buttons]
             .spacing(20)
             .align_x(iced::Center);
-        GuiWidget::container(content).center(iced::Fill).into()
+        GuiWidget::center(content).into()
     }
 }

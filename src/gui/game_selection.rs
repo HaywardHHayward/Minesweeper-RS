@@ -1,4 +1,4 @@
-﻿use iced::{widget as GuiWidget, Element, Task};
+﻿use iced::{Element, Task, widget as GuiWidget};
 
 use crate::gui::{Message as AppMessage, ScreenMessage, ScreenTrait};
 
@@ -116,13 +116,14 @@ impl ScreenTrait for GameSelection {
     fn view(&self) -> Element<'_, Self::Message> {
         match self.state {
             GameSelectionImpl::OptionSelection => {
-                let beginner = GuiWidget::button(centered_text("Beginning", iced::Fill))
+                let beginner = GuiWidget::button(GuiWidget::center_x("Beginning"))
                     .on_press(Self::Message::StartGame(Options::Beginner));
-                let intermediate = GuiWidget::button(centered_text("Intermediate", iced::Shrink))
-                    .on_press(Self::Message::StartGame(Options::Intermediate));
-                let expert = GuiWidget::button(centered_text("Expert", iced::Fill))
+                let intermediate =
+                    GuiWidget::button(GuiWidget::center_x("Intermediate").width(iced::Shrink))
+                        .on_press(Self::Message::StartGame(Options::Intermediate));
+                let expert = GuiWidget::button(GuiWidget::center_x("Expert"))
                     .on_press(Self::Message::StartGame(Options::Expert));
-                let custom = GuiWidget::button(centered_text("Custom", iced::Fill))
+                let custom = GuiWidget::button(GuiWidget::center_x("Custom"))
                     .on_press(Self::Message::StartGame(Options::Custom));
 
                 let options =
@@ -134,7 +135,7 @@ impl ScreenTrait for GameSelection {
                 let content = GuiWidget::column![options, return_to_menu]
                     .align_x(iced::Center)
                     .spacing(20);
-                GuiWidget::container(content).center(iced::Fill).into()
+                GuiWidget::center(content).into()
             }
             GameSelectionImpl::CustomSelection(ref custom) => {
                 const EDITOR_WIDTH: f32 = 60.0;
@@ -185,7 +186,7 @@ impl ScreenTrait for GameSelection {
                 let content = GuiWidget::column![custom_content, return_button]
                     .align_x(iced::Center)
                     .spacing(20);
-                GuiWidget::container(content).center(iced::Fill).into()
+                GuiWidget::center(content).into()
             }
         }
     }
@@ -197,13 +198,4 @@ pub enum Options {
     Intermediate,
     Expert,
     Custom,
-}
-#[inline]
-fn centered_text<'a>(
-    text: impl Into<GuiWidget::Text<'a>>,
-    fill_strategy: iced::Length,
-) -> impl Into<Element<'a, Action>> {
-    GuiWidget::container(text.into())
-        .align_x(iced::Center)
-        .width(fill_strategy)
 }
