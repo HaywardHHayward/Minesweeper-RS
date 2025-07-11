@@ -208,21 +208,25 @@ impl ScreenTrait for GameSelection {
                     .spacing(20);
                 GuiWidget::center(content).into()
             }
-            GameSelectionImpl::CustomSelection(ref custom) => {
-                // TODO: Add error messages that depend upon self.state.error
+            GameSelectionImpl::CustomSelection(CustomSelection {
+                ref height,
+                ref width,
+                ref mines,
+                ref error,
+            }) => {
                 const EDITOR_WIDTH: f32 = 60.0;
                 let width_text = GuiWidget::text("Width: ");
-                let width_editor = GuiWidget::text_input("", &custom.width)
+                let width_editor = GuiWidget::text_input("", width)
                     .on_input(|input| Self::Message::TextChanged(TextOptions::Width, input))
                     .width(iced::Fill);
 
                 let height_text = GuiWidget::text("Height: ");
-                let height_editor = GuiWidget::text_input("", &custom.height)
+                let height_editor = GuiWidget::text_input("", height)
                     .on_input(|input| Self::Message::TextChanged(TextOptions::Height, input))
                     .width(iced::Fill);
 
                 let mines_text = GuiWidget::text("Mines: ");
-                let mines_editor = GuiWidget::text_input("", &custom.mines)
+                let mines_editor = GuiWidget::text_input("", mines)
                     .on_input(|input| Self::Message::TextChanged(TextOptions::Mines, input))
                     .width(iced::Fill);
 
@@ -238,10 +242,7 @@ impl ScreenTrait for GameSelection {
                     .align_y(iced::Center);
 
                 let create_button = GuiWidget::button("Create board").on_press_maybe(
-                    if !custom.height.is_empty()
-                        && !custom.width.is_empty()
-                        && !custom.mines.is_empty()
-                    {
+                    if !height.is_empty() && !width.is_empty() && !mines.is_empty() {
                         Some(Self::Message::CheckCustom)
                     } else {
                         None
@@ -252,13 +253,43 @@ impl ScreenTrait for GameSelection {
                     .align_x(iced::Center)
                     .spacing(10);
 
+                let possible_errors = error.as_deref();
+                let error_message = possible_errors.map(|errors| {
+                    let mut error_string = String::new();
+                    for error in errors {
+                        match error {
+                            GameSelectionError::IsZero(field) => {
+                                let field_text = match field {
+                                    TextOptions::Height => "height",
+                                    TextOptions::Width => "width",
+                                    TextOptions::Mines => "mines"
+                                };
+                                error_string += format!("Cannot have zero {field_text}\n").as_str()
+                            }
+                            GameSelectionError::BoardCreate(BoardError::InvalidBoardSize) => {
+                                error_string += "Cannot have a 1x1 board\n"
+                            }
+                            GameSelectionError::BoardCreate(BoardError::TooManyMines(maximum_mines)) => {
+                                error_string += format!("Too many mines. The maximum amount of mines at the given board size is {maximum_mines}").as_str()
+                            }
+                        }
+                    }
+                    error_string
+                });
+
                 let return_button = GuiWidget::button("Return to options")
                     .on_press(Self::Message::GoToOptionSelection);
 
-                let content = GuiWidget::column![custom_content, return_button]
-                    .align_x(iced::Center)
-                    .spacing(20);
-                GuiWidget::center(content).into()
+                let content = if let Some(error_message) = error_message {
+                    GuiWidget::column![
+                        custom_content,
+                        GuiWidget::text(error_message),
+                        return_button
+                    ]
+                } else {
+                    GuiWidget::column![custom_content, return_button]
+                };
+                GuiWidget::center(content.align_x(iced::Center).spacing(20)).into()
             }
         }
     }
