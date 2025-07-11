@@ -7,8 +7,8 @@ pub struct Config {
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 struct Theme {
-    game_theme: GameTheme, // Placeholder for game theme
-    menu_theme: MenuTheme, // Placeholder for menu theme
+    game_theme: GameTheme,
+    menu_theme: MenuTheme,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
