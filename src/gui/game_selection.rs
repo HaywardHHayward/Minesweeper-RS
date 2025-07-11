@@ -1,6 +1,11 @@
-﻿use iced::{Element, Task, widget as GuiWidget};
+﻿use std::num::{IntErrorKind, NonZeroU8, NonZeroU16};
 
-use crate::gui::{Message as AppMessage, ScreenMessage, ScreenTrait};
+use iced::{Element, Task, widget as GuiWidget};
+
+use crate::{
+    core::board::{Board, BoardError},
+    gui::{Message as AppMessage, ScreenMessage, ScreenTrait},
+};
 
 #[derive(Debug, Default)]
 pub struct GameSelection {
@@ -19,10 +24,17 @@ struct CustomSelection {
     height: String,
     width: String,
     mines: String,
+    error: Option<Vec<GameSelectionError>>,
+}
+
+#[derive(Debug)]
+enum GameSelectionError {
+    BoardCreate(BoardError),
+    IsZero(TextOptions),
 }
 
 #[derive(Debug, Clone)]
-enum TextChangedEnum {
+enum TextOptions {
     Height,
     Width,
     Mines,
@@ -35,7 +47,7 @@ pub enum Action {
     GoToOptionSelection,
     CheckCustom,
     ReturnToMainMenu,
-    TextChanged(TextChangedEnum, String),
+    TextChanged(TextOptions, String),
 }
 
 impl ScreenTrait for GameSelection {
@@ -73,8 +85,66 @@ impl ScreenTrait for GameSelection {
                 Task::none()
             }
             Self::Message::CheckCustom => {
-                // Validate custom options and start the game if valid
-                Task::none()
+                let GameSelectionImpl::CustomSelection(CustomSelection {
+                    ref height,
+                    ref width,
+                    ref mines,
+                    ref mut error,
+                }) = self.state
+                else {
+                    return Task::none();
+                };
+                let height_result = height.parse::<NonZeroU8>().map_err(|error| {
+                    match error.kind() {
+                        IntErrorKind::Zero => GameSelectionError::IsZero(TextOptions::Height),
+                        _ => unreachable!("Only cause of error should be that the height is zero. Received cause of error: {:?}", error.kind()),
+                    }
+                });
+                let width_result = width.parse::<NonZeroU8>().map_err(|error| {
+                    match error.kind() {
+                        IntErrorKind::Zero => GameSelectionError::IsZero(TextOptions::Width),
+                        _ => unreachable!("Only cause of error should be that the width is zero. Received cause of error: {:?}", error.kind())
+                    }
+                });
+                let mines_result = mines.parse::<NonZeroU16>().map_err(|error| {
+                    match error.kind() {
+                        IntErrorKind::Zero => GameSelectionError::IsZero(TextOptions::Mines),
+                        _ => unreachable!("Only cause of error should be that the mines is zero. Received cause of error: {:?}", error.kind())
+                    }
+                });
+                if let Ok(height_num) = height_result
+                    && let Ok(width_num) = width_result
+                    && let Ok(mines_num) = mines_result
+                {
+                    let board_result = Board::create_custom(width_num, height_num, mines_num);
+                    match board_result {
+                        Ok(board) => {
+                            let game = crate::gui::game::Game::new(board);
+                            Task::done(AppMessage::InitializeScreen {
+                                screen_type: crate::gui::ScreenType::Game,
+                                initializer_fn: Box::new(|| crate::gui::Screen::Game(game)),
+                                change_screen: true,
+                            })
+                        }
+                        Err(board_error) => {
+                            *error = Some(vec![GameSelectionError::BoardCreate(board_error)]);
+                            Task::none()
+                        }
+                    }
+                } else {
+                    let mut error_vec = Vec::with_capacity(3);
+                    if let Err(height_error) = height_result {
+                        error_vec.push(height_error);
+                    }
+                    if let Err(width_error) = width_result {
+                        error_vec.push(width_error);
+                    }
+                    if let Err(mines_error) = mines_result {
+                        error_vec.push(mines_error);
+                    }
+                    *error = Some(error_vec);
+                    Task::none()
+                }
             }
             Self::Message::ReturnToMainMenu => {
                 Task::done(AppMessage::ChangeScreen(crate::gui::ScreenType::MainMenu))
@@ -84,6 +154,7 @@ impl ScreenTrait for GameSelection {
                     ref mut height,
                     ref mut width,
                     ref mut mines,
+                    ..
                 }) = self.state
                 else {
                     return Task::none();
@@ -92,17 +163,17 @@ impl ScreenTrait for GameSelection {
                     .matches(|ref char| char::is_ascii_digit(char))
                     .collect::<String>();
                 match selection {
-                    TextChangedEnum::Height => {
+                    TextOptions::Height => {
                         if numeric_string.len() <= 2 {
                             *height = numeric_string;
                         }
                     }
-                    TextChangedEnum::Width => {
+                    TextOptions::Width => {
                         if numeric_string.len() <= 2 {
                             *width = numeric_string;
                         }
                     }
-                    TextChangedEnum::Mines => {
+                    TextOptions::Mines => {
                         if numeric_string.len() <= 4 {
                             *mines = numeric_string;
                         }
@@ -138,20 +209,21 @@ impl ScreenTrait for GameSelection {
                 GuiWidget::center(content).into()
             }
             GameSelectionImpl::CustomSelection(ref custom) => {
+                // TODO: Add error messages that depend upon self.state.error
                 const EDITOR_WIDTH: f32 = 60.0;
                 let width_text = GuiWidget::text("Width: ");
                 let width_editor = GuiWidget::text_input("", &custom.width)
-                    .on_input(|input| Self::Message::TextChanged(TextChangedEnum::Width, input))
+                    .on_input(|input| Self::Message::TextChanged(TextOptions::Width, input))
                     .width(iced::Fill);
 
                 let height_text = GuiWidget::text("Height: ");
                 let height_editor = GuiWidget::text_input("", &custom.height)
-                    .on_input(|input| Self::Message::TextChanged(TextChangedEnum::Height, input))
+                    .on_input(|input| Self::Message::TextChanged(TextOptions::Height, input))
                     .width(iced::Fill);
 
                 let mines_text = GuiWidget::text("Mines: ");
                 let mines_editor = GuiWidget::text_input("", &custom.mines)
-                    .on_input(|input| Self::Message::TextChanged(TextChangedEnum::Mines, input))
+                    .on_input(|input| Self::Message::TextChanged(TextOptions::Mines, input))
                     .width(iced::Fill);
 
                 let texts = GuiWidget::column![width_text, height_text, mines_text]

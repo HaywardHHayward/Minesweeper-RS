@@ -183,7 +183,11 @@ impl Game {
                     6 => iced::color!(0, 127, 127),
                     7 => iced::color!(255, 255, 255),
                     8 => iced::color!(127, 127, 127),
-                    _ => std::unreachable!(),
+                    // SAFETY: The internal enum AdjacentMines (which is what cell.adjacent_mines
+                    // converts from) CANNOT represent values outside 0-8, and we
+                    // just checked that adjacent_mines is not 0, so all other values are
+                    // unreachable.
+                    _ => unsafe { std::hint::unreachable_unchecked() },
                 };
                 let text = GuiWidget::text!("{adjacent_mines}")
                     .font(iced::font::Font::MONOSPACE)

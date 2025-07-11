@@ -16,13 +16,14 @@ pub fn subscription(state: &Application) -> Subscription<Message> {
     state.subscription()
 }
 
-pub(crate) trait ScreenTrait {
+pub(crate) trait ScreenTrait: std::fmt::Debug {
     type Message: std::fmt::Debug;
-    fn update(&mut self, _message: Self::Message) -> Task<Message> {
+    fn update(&mut self, message: Self::Message) -> Task<Message> {
+        let _ = message;
         Task::none()
     }
     fn view(&self) -> Element<'_, Self::Message> {
-        iced::widget::text("Hello, world!").into()
+        iced::widget::text!("Unfinished screen, current state: {self:?}").into()
     }
     fn subscription(&self) -> Subscription<Self::Message> {
         Subscription::none()
