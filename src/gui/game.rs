@@ -28,7 +28,7 @@ pub enum Action {
 }
 
 impl Game {
-    pub fn new(board: Board) -> Self {
+    pub(crate) fn new(board: Board) -> Self {
         let game_start = Instant::now();
         Self {
             board,

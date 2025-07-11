@@ -1,5 +1,5 @@
 #[derive(Clone, Debug)]
-pub struct Cell {
+pub(crate) struct Cell {
     open_state: OpenState,
     mine_state: MineState,
 }
@@ -63,7 +63,7 @@ enum CellEvent {
 }
 
 impl Cell {
-    pub const fn new() -> Self {
+    pub(crate) const fn new() -> Self {
         Cell {
             open_state: OpenState::Unopened { is_flagged: false },
             mine_state: MineState::Safe {
@@ -71,28 +71,28 @@ impl Cell {
             },
         }
     }
-    pub fn open(&mut self) {
+    pub(crate) fn open(&mut self) {
         self.cell_transition(CellEvent::Open);
     }
-    pub const fn is_open(&self) -> bool {
+    pub(crate) const fn is_open(&self) -> bool {
         matches!(self.open_state, OpenState::Opened)
     }
-    pub fn toggle_flag(&mut self) {
+    pub(crate) fn toggle_flag(&mut self) {
         self.cell_transition(CellEvent::ToggleFlag);
     }
-    pub const fn is_flagged(&self) -> bool {
+    pub(crate) const fn is_flagged(&self) -> bool {
         matches!(self.open_state, OpenState::Unopened { is_flagged: true })
     }
-    pub fn become_mined(&mut self) {
+    pub(crate) fn become_mined(&mut self) {
         self.cell_transition(CellEvent::BecomeMined);
     }
-    pub const fn is_mine(&self) -> bool {
+    pub(crate) const fn is_mine(&self) -> bool {
         matches!(self.mine_state, MineState::Mined)
     }
-    pub fn increment_adjacent_mines(&mut self) {
+    pub(crate) fn increment_adjacent_mines(&mut self) {
         self.cell_transition(CellEvent::IncrementAdjacentMines);
     }
-    pub fn adjacent_mines(&self) -> Option<u8> {
+    pub(crate) fn adjacent_mines(&self) -> Option<u8> {
         if let MineState::Safe { adjacent_mines } = &self.mine_state {
             Some(u8::from(*adjacent_mines))
         } else {

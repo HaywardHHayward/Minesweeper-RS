@@ -8,14 +8,14 @@ use rand::prelude::*;
 use crate::core::cell::Cell;
 
 #[derive(Copy, Clone, Debug)]
-pub enum BoardState {
+pub(crate) enum BoardState {
     InProgress,
     Won,
     Lost,
 }
 
 #[derive(Debug)]
-pub struct Board {
+pub(crate) struct Board {
     cells: Vec<Cell>,
     width: NonZeroU8,
     height: NonZeroU8,
@@ -27,13 +27,13 @@ pub struct Board {
 }
 
 #[derive(Debug)]
-pub enum BoardError {
+pub(crate) enum BoardError {
     InvalidBoardSize,
     TooManyMines(NonZeroU16), // The number of mines equals to or exceeds the board area
 }
 
 impl Board {
-    pub fn create_custom(
+    pub(crate) fn create_custom(
         width: NonZeroU8,
         height: NonZeroU8,
         mine_count: NonZeroU16,
@@ -67,7 +67,7 @@ impl Board {
             state: BoardState::InProgress,
         })
     }
-    pub fn create_beginner() -> Self {
+    pub(crate) fn create_beginner() -> Self {
         Self::create_custom(
             NonZeroU8::new(9).unwrap(),
             NonZeroU8::new(9).unwrap(),
@@ -75,7 +75,7 @@ impl Board {
         )
         .unwrap()
     }
-    pub fn create_intermediate() -> Self {
+    pub(crate) fn create_intermediate() -> Self {
         Self::create_custom(
             NonZeroU8::new(16).unwrap(),
             NonZeroU8::new(16).unwrap(),
@@ -83,7 +83,7 @@ impl Board {
         )
         .unwrap()
     }
-    pub fn create_expert() -> Self {
+    pub(crate) fn create_expert() -> Self {
         Self::create_custom(
             NonZeroU8::new(30).unwrap(),
             NonZeroU8::new(16).unwrap(),
@@ -91,28 +91,28 @@ impl Board {
         )
         .unwrap()
     }
-    pub fn get_cell(&self, x: u8, y: u8) -> Option<&Cell> {
+    pub(crate) fn get_cell(&self, x: u8, y: u8) -> Option<&Cell> {
         if x >= self.get_width() || y >= self.get_height() {
             return None;
         }
         self.cells.get(coordinate_to_linear(x, y, self.width))
     }
-    pub fn get_cell_mut(&mut self, x: u8, y: u8) -> Option<&mut Cell> {
+    pub(crate) fn get_cell_mut(&mut self, x: u8, y: u8) -> Option<&mut Cell> {
         if x >= self.get_width() || y >= self.get_height() {
             return None;
         }
         self.cells.get_mut(coordinate_to_linear(x, y, self.width))
     }
-    pub const fn get_width(&self) -> u8 {
+    pub(crate) const fn get_width(&self) -> u8 {
         self.width.get()
     }
-    pub const fn get_height(&self) -> u8 {
+    pub(crate) const fn get_height(&self) -> u8 {
         self.height.get()
     }
-    pub const fn get_mine_count(&self) -> u16 {
+    pub(crate) const fn get_mine_count(&self) -> u16 {
         self.mine_count.get()
     }
-    pub fn get_remaining_mines(&self) -> i32 {
+    pub(crate) fn get_remaining_mines(&self) -> i32 {
         // Subtracts how many cells have been flagged from how many mines there are
         (self.mine_count.get() as i32)
             - (self
@@ -121,7 +121,7 @@ impl Board {
                 .filter(|(x, y)| self.get_cell(*x, *y).unwrap().is_flagged())
                 .count() as i32)
     }
-    pub fn open_cell(&mut self, x: u8, y: u8) {
+    pub(crate) fn open_cell(&mut self, x: u8, y: u8) {
         if !self.unopened_coordinates.contains(&(x, y)) {
             return;
         }
@@ -155,7 +155,7 @@ impl Board {
             self.state = BoardState::Won;
         }
     }
-    pub fn chord_cell(&mut self, x: u8, y: u8) {
+    pub(crate) fn chord_cell(&mut self, x: u8, y: u8) {
         let Some(cell) = self.get_cell(x, y) else {
             return;
         };
@@ -180,7 +180,7 @@ impl Board {
             self.open_cell(surrounding_x, surrounding_y);
         }
     }
-    pub fn toggle_flag(&mut self, x: u8, y: u8) {
+    pub(crate) fn toggle_flag(&mut self, x: u8, y: u8) {
         let Some(cell) = self.get_cell_mut(x, y) else {
             return;
         };
@@ -189,7 +189,7 @@ impl Board {
         }
         cell.toggle_flag();
     }
-    pub fn get_state(&self) -> BoardState {
+    pub(crate) fn get_state(&self) -> BoardState {
         self.state
     }
     fn get_surrounding_coordinates(&self, x: u8, y: u8) -> impl Iterator<Item = (u8, u8)> + use<> {
