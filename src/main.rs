@@ -1,4 +1,4 @@
-use minesweeper_rs::gui::*;
+use minesweeper_rs::*;
 
 pub fn main() -> iced::Result {
     iced::application(Application::default, update, view)

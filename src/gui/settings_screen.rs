@@ -2,19 +2,19 @@
 
 use crate::gui::{Application, Message as AppMessage, ScreenTrait, ScreenType, config::*};
 #[derive(Debug)]
-pub struct SettingsScreen {
+pub(crate) struct SettingsScreen {
     config: Config,
 }
 
 #[derive(Debug, Clone)]
-pub enum Action {
+pub(crate) enum Action {
     ReturnToMainMenu,
     MenuThemeSelected(MenuTheme),
     GameThemeSelected(GameTheme),
 }
 
 impl SettingsScreen {
-    pub fn new(config: Config) -> Self {
+    pub(crate) fn new(config: Config) -> Self {
         Self { config }
     }
 }

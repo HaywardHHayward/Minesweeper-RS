@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[derive(Debug, Default)]
-pub struct GameSelection {
+pub(crate) struct GameSelection {
     state: GameSelectionImpl,
 }
 
@@ -34,14 +34,14 @@ enum GameSelectionError {
 }
 
 #[derive(Debug, Clone)]
-enum TextOptions {
+pub(crate) enum TextOptions {
     Height,
     Width,
     Mines,
 }
 
 #[derive(Debug, Clone)]
-pub enum Action {
+pub(crate) enum Action {
     StartGame(Options),
     GoToCustom,
     GoToOptionSelection,
@@ -57,9 +57,9 @@ impl ScreenTrait for GameSelection {
         match message {
             Self::Message::StartGame(options) => {
                 let board = match options {
-                    Options::Beginner => crate::core::board::Board::create_beginner(),
-                    Options::Intermediate => crate::core::board::Board::create_intermediate(),
-                    Options::Expert => crate::core::board::Board::create_expert(),
+                    Options::Beginner => Board::create_beginner(),
+                    Options::Intermediate => Board::create_intermediate(),
+                    Options::Expert => Board::create_expert(),
                     Options::Custom => {
                         // Short-circuit, go to custom board screen for setup
                         return Task::done(AppMessage::ScreenAction(ScreenMessage::GameSelection(
@@ -296,7 +296,7 @@ impl ScreenTrait for GameSelection {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum Options {
+pub(crate) enum Options {
     Beginner,
     Intermediate,
     Expert,

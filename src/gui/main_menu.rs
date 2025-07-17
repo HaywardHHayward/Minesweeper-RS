@@ -3,10 +3,10 @@
 use crate::gui::{Message as AppMessage, ScreenTrait, ScreenType};
 
 #[derive(Debug, Default)]
-pub struct MainMenu;
+pub(crate) struct MainMenu;
 
 #[derive(Debug, Clone)]
-pub enum Action {
+pub(crate) enum Action {
     StartGame,
     Settings,
     About,

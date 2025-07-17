@@ -4,27 +4,43 @@ use iced::{Element, Subscription, Task};
 
 mod config;
 
-pub fn update(state: &mut Application, message: Message) -> Task<Message> {
-    state.update(message)
+pub fn update(state: &mut Application, message: PublicMessage) -> Task<PublicMessage> {
+    let message = message.0;
+    state.update(message).map(PublicMessage)
 }
 
-pub fn view(state: &Application) -> Element<'_, Message> {
-    state.view()
+pub fn view(state: &Application) -> Element<'_, PublicMessage> {
+    state.view().map(PublicMessage)
 }
 
-pub fn subscription(state: &Application) -> Subscription<Message> {
-    state.subscription()
+pub fn subscription(state: &Application) -> Subscription<PublicMessage> {
+    state.subscription().map(PublicMessage)
 }
 
+/// Trait that defines the interface for screens in the application. Based on
+/// the Elm architecture.
 pub(crate) trait ScreenTrait: std::fmt::Debug {
+    /// The type of messages that the screen can handle.
     type Message: std::fmt::Debug;
+    /// Updates the screen's state based on the provided message. Returns a task
+    /// containing the highest level of message to be processed by the
+    /// application.
+    ///
+    /// Returns the highest level of message to allow for screens to
+    /// do application level actions such as changing the screen or
+    /// initializing a new screen, but only receives messages that are specific
+    /// to the screen, since only the highest level abstraction of the
+    /// application should HANDLE application level actions.
     fn update(&mut self, message: Self::Message) -> Task<Message> {
         let _ = message;
         Task::none()
     }
+    /// Returns the current declarative view of the screen as an `Element`.
     fn view(&self) -> Element<'_, Self::Message> {
         iced::widget::text!("Unfinished screen, current state: {self:?}").into()
     }
+    /// Returns a subscription for the screen, which can be used to handle
+    /// passive events such as checking for keypresses, or time based events.
     fn subscription(&self) -> Subscription<Self::Message> {
         Subscription::none()
     }
@@ -38,7 +54,7 @@ pub struct Application {
 }
 
 impl Application {
-    pub fn app_dirs() -> directories::ProjectDirs {
+    pub(crate) fn app_dirs() -> directories::ProjectDirs {
         directories::ProjectDirs::from("", "HaywardHHayward", "Minesweeper")
             .expect("Failed to get project directories")
     }
@@ -155,20 +171,20 @@ type Callback<Output> = Box<dyn FnOnce() -> Output + Send + Sync>;
 // Screen::view, and Screen::subscription
 macro_rules! create_screens {
     ($([$snake_case:ident, $pascal_case:ident]),*) => {
-        $(pub mod $snake_case;)*
+        $(pub(crate) mod $snake_case;)*
 
         #[derive(Debug)]
-        pub enum ScreenMessage {
+        pub(crate) enum ScreenMessage {
             $($pascal_case($snake_case::Action),)*
         }
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-        pub enum ScreenType {
+        pub(crate) enum ScreenType {
             $($pascal_case,)*
         }
 
         #[derive(Debug)]
-        pub enum Screen {
+        pub(crate) enum Screen {
             $($pascal_case($snake_case::$pascal_case),)*
         }
 
@@ -202,7 +218,10 @@ create_screens! {
     [settings_screen, SettingsScreen]
 }
 
-pub enum Message {
+#[derive(Debug)]
+pub struct PublicMessage(Message);
+
+pub(crate) enum Message {
     InitializeScreen {
         screen_type: ScreenType,
         initializer_fn: Callback<Screen>,

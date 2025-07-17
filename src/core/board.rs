@@ -1,6 +1,7 @@
 use std::{
     collections::HashSet,
     num::{NonZeroU8, NonZeroU16},
+    sync::{Arc, RwLock},
 };
 
 use rand::prelude::*;
@@ -8,14 +9,14 @@ use rand::prelude::*;
 use crate::core::cell::Cell;
 
 #[derive(Copy, Clone, Debug)]
-pub(crate) enum BoardState {
+pub enum BoardState {
     InProgress,
     Won,
     Lost,
 }
 
 #[derive(Debug)]
-pub(crate) struct Board {
+pub struct Board {
     cells: Vec<Cell>,
     width: NonZeroU8,
     height: NonZeroU8,
@@ -27,13 +28,13 @@ pub(crate) struct Board {
 }
 
 #[derive(Debug)]
-pub(crate) enum BoardError {
+pub enum BoardError {
     InvalidBoardSize,
     TooManyMines(NonZeroU16), // The number of mines equals to or exceeds the board area
 }
 
 impl Board {
-    pub(crate) fn create_custom(
+    pub fn create_custom(
         width: NonZeroU8,
         height: NonZeroU8,
         mine_count: NonZeroU16,
@@ -67,7 +68,7 @@ impl Board {
             state: BoardState::InProgress,
         })
     }
-    pub(crate) fn create_beginner() -> Self {
+    pub fn create_beginner() -> Self {
         Self::create_custom(
             NonZeroU8::new(9).unwrap(),
             NonZeroU8::new(9).unwrap(),
@@ -75,7 +76,7 @@ impl Board {
         )
         .unwrap()
     }
-    pub(crate) fn create_intermediate() -> Self {
+    pub fn create_intermediate() -> Self {
         Self::create_custom(
             NonZeroU8::new(16).unwrap(),
             NonZeroU8::new(16).unwrap(),
@@ -83,7 +84,7 @@ impl Board {
         )
         .unwrap()
     }
-    pub(crate) fn create_expert() -> Self {
+    pub fn create_expert() -> Self {
         Self::create_custom(
             NonZeroU8::new(30).unwrap(),
             NonZeroU8::new(16).unwrap(),
@@ -91,28 +92,28 @@ impl Board {
         )
         .unwrap()
     }
-    pub(crate) fn get_cell(&self, x: u8, y: u8) -> Option<&Cell> {
+    pub fn get_cell(&self, x: u8, y: u8) -> Option<&Cell> {
         if x >= self.get_width() || y >= self.get_height() {
             return None;
         }
         self.cells.get(coordinate_to_linear(x, y, self.width))
     }
-    pub(crate) fn get_cell_mut(&mut self, x: u8, y: u8) -> Option<&mut Cell> {
+    pub fn get_cell_mut(&mut self, x: u8, y: u8) -> Option<&mut Cell> {
         if x >= self.get_width() || y >= self.get_height() {
             return None;
         }
         self.cells.get_mut(coordinate_to_linear(x, y, self.width))
     }
-    pub(crate) const fn get_width(&self) -> u8 {
+    pub const fn get_width(&self) -> u8 {
         self.width.get()
     }
-    pub(crate) const fn get_height(&self) -> u8 {
+    pub const fn get_height(&self) -> u8 {
         self.height.get()
     }
-    pub(crate) const fn get_mine_count(&self) -> u16 {
+    pub const fn get_mine_count(&self) -> u16 {
         self.mine_count.get()
     }
-    pub(crate) fn get_remaining_mines(&self) -> i32 {
+    pub fn get_remaining_mines(&self) -> i32 {
         // Subtracts how many cells have been flagged from how many mines there are
         (self.mine_count.get() as i32)
             - (self
@@ -121,7 +122,7 @@ impl Board {
                 .filter(|(x, y)| self.get_cell(*x, *y).unwrap().is_flagged())
                 .count() as i32)
     }
-    pub(crate) fn open_cell(&mut self, x: u8, y: u8) {
+    pub fn open_cell(&mut self, x: u8, y: u8) {
         if !self.unopened_coordinates.contains(&(x, y)) {
             return;
         }
@@ -155,7 +156,11 @@ impl Board {
             self.state = BoardState::Won;
         }
     }
-    pub(crate) fn chord_cell(&mut self, x: u8, y: u8) {
+
+    /// Chords the cell at `(x, y)`, which means that if the cell is open and
+    /// the number of flags surrounding the cell is equal to the number of
+    /// adjacent mines, then all the unflagged surrounding cells are opened.
+    pub fn chord_cell(&mut self, x: u8, y: u8) {
         let Some(cell) = self.get_cell(x, y) else {
             return;
         };
@@ -180,7 +185,7 @@ impl Board {
             self.open_cell(surrounding_x, surrounding_y);
         }
     }
-    pub(crate) fn toggle_flag(&mut self, x: u8, y: u8) {
+    pub fn toggle_flag(&mut self, x: u8, y: u8) {
         let Some(cell) = self.get_cell_mut(x, y) else {
             return;
         };
@@ -189,7 +194,7 @@ impl Board {
         }
         cell.toggle_flag();
     }
-    pub(crate) fn get_state(&self) -> BoardState {
+    pub fn get_state(&self) -> BoardState {
         self.state
     }
     fn get_surrounding_coordinates(&self, x: u8, y: u8) -> impl Iterator<Item = (u8, u8)> + use<> {
@@ -212,6 +217,46 @@ impl Board {
     }
     fn generate_mines(&mut self, x: u8, y: u8) {
         let mut rng = SmallRng::from_os_rng();
+        let total_area = self.get_width() as u16 * self.get_height() as u16;
+        let mut surrounding_coordinates =
+            self.get_surrounding_coordinates(x, y).collect::<Vec<_>>();
+        // In order to make the game more fun, I try and avoid placing mines in the
+        // cells surrounding the cell selected. However, if the number of mines is too
+        // high, this may not be possible, and therefore must be accounted for.
+        let too_many_mines =
+            total_area - (surrounding_coordinates.len() as u16 + 1) < self.mine_count.get();
+        let mut disallowed_coordinates: Vec<(u8, u8)> = vec![(x, y)];
+        // If we have enough space, we will not place mines in the cells surrounding the
+        // cell specified
+        if !too_many_mines {
+            disallowed_coordinates.append(&mut surrounding_coordinates);
+        }
+        let mut possible_coordinates = Vec::with_capacity(total_area as usize);
+        // Can't find a more clever way to do this, so I just iterate through all the
+        // possible coordinates and do not push them into the possible coordinates if
+        // they're disallowed. If you have a better idea, please let me know.
+        for cell_x in 0..self.get_width() {
+            for cell_y in 0..self.get_height() {
+                if disallowed_coordinates.contains(&(cell_x, cell_y)) {
+                    continue;
+                }
+                possible_coordinates.push((cell_x, cell_y));
+            }
+        }
+        let mined_coordinates =
+            possible_coordinates.choose_multiple(&mut rng, self.mine_count.get() as usize);
+        for (mine_x, mine_y) in mined_coordinates {
+            for (cell_x, cell_y) in self.get_surrounding_coordinates(*mine_x, *mine_y) {
+                self.get_cell_mut(cell_x, cell_y)
+                    .unwrap()
+                    .increment_adjacent_mines();
+            }
+            self.get_cell_mut(*mine_x, *mine_y).unwrap().become_mined();
+            self.mined_coordinates.insert((*mine_x, *mine_y));
+        }
+    }
+    pub fn generate_mines_with_seed(&mut self, x: u8, y: u8, seed: u64) {
+        let mut rng = SmallRng::seed_from_u64(seed);
         let total_area = self.get_width() as u16 * self.get_height() as u16;
         let mut surrounding_coordinates =
             self.get_surrounding_coordinates(x, y).collect::<Vec<_>>();

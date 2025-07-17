@@ -3,12 +3,12 @@ use iced::{Element, Task, widget as GuiWidget};
 use crate::gui::{Message as AppMessage, ScreenTrait};
 
 #[derive(Clone, Debug)]
-pub enum Action {
+pub(crate) enum Action {
     ReturnToMainMenu,
 }
 
 #[derive(Debug, Default)]
-pub struct About;
+pub(crate) struct About;
 
 impl ScreenTrait for About {
     type Message = Action;

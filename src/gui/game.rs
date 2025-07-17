@@ -11,14 +11,14 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct Game {
+pub(crate) struct Game {
     board: Board,
     start_time: Instant,
     current_time: Instant,
 }
 
 #[derive(Debug, Clone)]
-pub enum Action {
+pub(crate) enum Action {
     OpenCell(u8, u8),
     ToggleFlag(u8, u8),
     ChordCell(u8, u8),
@@ -190,7 +190,7 @@ impl Game {
                     _ => unsafe { std::hint::unreachable_unchecked() },
                 };
                 let text = GuiWidget::text!("{adjacent_mines}")
-                    .font(iced::font::Font::MONOSPACE)
+                    .font(Font::MONOSPACE)
                     .size(14)
                     .color(color);
                 stack = stack.push(cell_container(text));
