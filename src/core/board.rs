@@ -68,28 +68,37 @@ impl Board {
         })
     }
     pub fn create_beginner() -> Self {
-        Self::create_custom(
-            NonZeroU8::new(9).unwrap(),
-            NonZeroU8::new(9).unwrap(),
-            NonZeroU16::new(10).unwrap(),
-        )
-        .unwrap()
+        unsafe {
+            // SAFETY: All values are hardcoded, non-zero and within the valid range
+            Self::create_custom(
+                NonZeroU8::new_unchecked(9),
+                NonZeroU8::new_unchecked(9),
+                NonZeroU16::new_unchecked(10),
+            )
+            .unwrap_unchecked()
+        }
     }
     pub fn create_intermediate() -> Self {
-        Self::create_custom(
-            NonZeroU8::new(16).unwrap(),
-            NonZeroU8::new(16).unwrap(),
-            NonZeroU16::new(40).unwrap(),
-        )
-        .unwrap()
+        unsafe {
+            // SAFETY: All values are hardcoded, non-zero and within the valid range
+            Self::create_custom(
+                NonZeroU8::new_unchecked(16),
+                NonZeroU8::new_unchecked(16),
+                NonZeroU16::new_unchecked(40),
+            )
+            .unwrap_unchecked()
+        }
     }
     pub fn create_expert() -> Self {
-        Self::create_custom(
-            NonZeroU8::new(30).unwrap(),
-            NonZeroU8::new(16).unwrap(),
-            NonZeroU16::new(99).unwrap(),
-        )
-        .unwrap()
+        unsafe {
+            // SAFETY: All values are hardcoded, non-zero and within the valid range
+            Self::create_custom(
+                NonZeroU8::new_unchecked(30),
+                NonZeroU8::new_unchecked(16),
+                NonZeroU16::new_unchecked(99),
+            )
+            .unwrap_unchecked()
+        }
     }
     pub fn get_cell(&self, x: u8, y: u8) -> Option<&Cell> {
         if x >= self.get_width() || y >= self.get_height() {
