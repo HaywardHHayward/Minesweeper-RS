@@ -1,7 +1,6 @@
 use std::{
-    collections::HashSet,
+    collections::{HashSet, VecDeque},
     num::{NonZeroU8, NonZeroU16},
-    sync::{Arc, RwLock},
 };
 
 use rand::prelude::*;
@@ -145,11 +144,31 @@ impl Board {
             return;
         }
         if cell.adjacent_mines().unwrap() == 0 {
-            // At some point I will try and optimize this via multithreading like in my C++
-            // version, but for now I will just open all the surrounding cells
-            // consecutively.
-            for (surrounding_x, surrounding_y) in self.get_surrounding_coordinates(x, y) {
-                self.open_cell(surrounding_x, surrounding_y);
+            let mut queue = self
+                .get_surrounding_coordinates(x, y)
+                .collect::<VecDeque<_>>();
+            while let Some((surrounding_x, surrounding_y)) = queue.pop_front() {
+                if !self
+                    .unopened_coordinates
+                    .contains(&(surrounding_x, surrounding_y))
+                {
+                    continue;
+                }
+                let cell = self.get_cell(surrounding_x, surrounding_y).unwrap();
+                if cell.is_flagged() {
+                    continue;
+                }
+                self.unopened_coordinates
+                    .remove(&(surrounding_x, surrounding_y));
+                let cell = self.get_cell_mut(surrounding_x, surrounding_y).unwrap();
+                cell.open();
+                if cell.adjacent_mines().unwrap() == 0 {
+                    for (surrounding_x, surrounding_y) in
+                        self.get_surrounding_coordinates(surrounding_x, surrounding_y)
+                    {
+                        queue.push_back((surrounding_x, surrounding_y));
+                    }
+                }
             }
         }
         if self.unopened_coordinates == self.mined_coordinates {
