@@ -244,6 +244,10 @@ impl Board {
         coordinates.into_iter()
     }
     fn generate_mines(&mut self, x: u8, y: u8) {
+        if !self.first_open {
+            // DO NOT GENERATE MINES if a cell on the board has already been opened.
+            return;
+        }
         let mut rng = SmallRng::from_os_rng();
         let total_area = self.get_width() as u16 * self.get_height() as u16;
         let mut surrounding_coordinates =
@@ -284,6 +288,10 @@ impl Board {
         }
     }
     pub fn generate_mines_with_seed(&mut self, x: u8, y: u8, seed: u64) {
+        if !self.first_open {
+            // DO NOT GENERATE MINES if a cell on the board has already been opened.
+            return;
+        }
         let mut rng = SmallRng::seed_from_u64(seed);
         let total_area = self.get_width() as u16 * self.get_height() as u16;
         let mut surrounding_coordinates =
