@@ -124,12 +124,112 @@ impl ScreenTrait for Game {
     }
 }
 
+static ASSET_DATA: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/assets.zip"));
+
 mod image_default {
-    pub(super) static OPENED_CELL: &[u8] = include_bytes!("../../assets/default/OpenedCell.png");
-    pub(super) static UNOPENED_CELL: &[u8] =
-        include_bytes!("../../assets/default/UnopenedCell.png");
-    pub(super) static MINE: &[u8] = include_bytes!("../../assets/default/Mine.png");
-    pub(super) static FLAG: &[u8] = include_bytes!("../../assets/default/Flag.png");
+    use std::{io::Read, sync::LazyLock};
+
+    use zip::*;
+
+    use crate::gui::game::ASSET_DATA;
+
+    #[derive(Debug)]
+    enum CacheError {
+        NotFound,
+        IoError(std::io::Error),
+        ZipError(result::ZipError),
+    }
+
+    fn get_data_from_cache(path: &std::path::Path) -> Result<Vec<u8>, CacheError> {
+        let cached_asset_file = crate::Application::app_dirs()
+            .cache_dir()
+            .to_path_buf()
+            .join("assets")
+            .join(path);
+        if !cached_asset_file.exists() {
+            return Err(CacheError::NotFound);
+        }
+        let mut buffer = Vec::new();
+        let mut asset_file =
+            std::fs::File::open(&cached_asset_file).map_err(CacheError::IoError)?;
+        asset_file
+            .read_to_end(&mut buffer)
+            .map_err(CacheError::IoError)?;
+        Ok(buffer)
+    }
+
+    fn create_cache() -> Result<(), CacheError> {
+        let cached_asset_dir = crate::Application::app_dirs()
+            .cache_dir()
+            .to_path_buf()
+            .join("assets");
+        if !cached_asset_dir.exists() {
+            std::fs::create_dir_all(&cached_asset_dir).map_err(CacheError::IoError)?;
+        }
+        let archive_data = std::io::Cursor::new(ASSET_DATA);
+        let mut archive = ZipArchive::new(archive_data).map_err(CacheError::ZipError)?;
+        archive
+            .extract_unwrapped_root_dir(cached_asset_dir, zip::read::root_dir_common_filter)
+            .map_err(CacheError::ZipError)?;
+        Ok(())
+    }
+
+    pub(super) static OPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
+        let cache_result = get_data_from_cache(std::path::Path::new("default/OpenedCell.png"));
+        match cache_result {
+            Ok(data) => data,
+            Err(CacheError::NotFound) => {
+                if let Err(e) = create_cache() {
+                    panic!("Failed to create cache: {e:?}");
+                }
+                get_data_from_cache(std::path::Path::new("default/OpenedCell.png"))
+                    .expect("Failed to read OpenedCell from cache")
+            }
+            Err(e) => panic!("Failed to read OpenedCell from cache: {e:?}"),
+        }
+    });
+    pub(super) static UNOPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
+        let cache_result = get_data_from_cache(std::path::Path::new("default/UnopenedCell.png"));
+        match cache_result {
+            Ok(data) => data,
+            Err(CacheError::NotFound) => {
+                if let Err(e) = create_cache() {
+                    panic!("Failed to create cache: {e:?}");
+                }
+                get_data_from_cache(std::path::Path::new("default/UnopenedCell.png"))
+                    .expect("Failed to read UnopenedCell from cache")
+            }
+            Err(e) => panic!("Failed to read UnopenedCell from cache: {e:?}"),
+        }
+    });
+    pub(super) static MINE: LazyLock<Vec<u8>> = LazyLock::new(|| {
+        let cache_result = get_data_from_cache(std::path::Path::new("default/Mine.png"));
+        match cache_result {
+            Ok(data) => data,
+            Err(CacheError::NotFound) => {
+                if let Err(e) = create_cache() {
+                    panic!("Failed to create cache: {e:?}");
+                }
+                get_data_from_cache(std::path::Path::new("default/Mine.png"))
+                    .expect("Failed to read Mine from cache")
+            }
+            Err(e) => panic!("Failed to read Mine from cache: {e:?}"),
+        }
+    });
+    pub(super) static FLAG: LazyLock<Vec<u8>> = LazyLock::new(|| {
+        let cache_result = get_data_from_cache(std::path::Path::new("default/Flag.png"));
+        match cache_result {
+            Ok(data) => data,
+            Err(CacheError::NotFound) => {
+                if let Err(e) = create_cache() {
+                    panic!("Failed to create cache: {e:?}");
+                }
+                get_data_from_cache(std::path::Path::new("default/Flag.png"))
+                    .expect("Failed to read Flag from cache")
+            }
+            Err(e) => panic!("Failed to read Flag from cache: {e:?}"),
+        }
+    });
 }
 
 impl Game {
@@ -163,12 +263,13 @@ impl Game {
         }
         let mut stack = GuiWidget::Stack::with_capacity(2).height(16).width(16);
         if cell.is_open() {
-            let open_image =
-                GuiImage::Image::new(GuiImage::Handle::from_bytes(image_default::OPENED_CELL));
+            let open_image = GuiImage::Image::new(GuiImage::Handle::from_bytes(
+                image_default::OPENED_CELL.as_slice(),
+            ));
             stack = stack.push(open_image);
             if cell.is_mine() {
                 let mine_image = cell_container(GuiImage::Image::new(
-                    GuiImage::Handle::from_bytes(image_default::MINE),
+                    GuiImage::Handle::from_bytes(image_default::MINE.as_slice()),
                 ));
                 stack = stack.push(mine_image);
             } else if let Some(adjacent_mines) = cell.adjacent_mines()
@@ -196,12 +297,13 @@ impl Game {
                 stack = stack.push(cell_container(text));
             }
         } else {
-            let unopened_image =
-                GuiImage::Image::new(GuiImage::Handle::from_bytes(image_default::UNOPENED_CELL));
+            let unopened_image = GuiImage::Image::new(GuiImage::Handle::from_bytes(
+                image_default::UNOPENED_CELL.as_slice(),
+            ));
             stack = stack.push(unopened_image);
             if cell.is_flagged() {
                 let flag_image = cell_container(GuiImage::Image::new(
-                    GuiImage::Handle::from_bytes(image_default::FLAG),
+                    GuiImage::Handle::from_bytes(image_default::FLAG.as_slice()),
                 ));
                 stack = stack.push(flag_image);
             }
