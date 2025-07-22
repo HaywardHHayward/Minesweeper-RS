@@ -288,6 +288,7 @@ impl Board {
             self.mined_coordinates.insert((*mine_x, *mine_y));
         }
     }
+    #[cfg(feature = "benching")]
     pub fn generate_mines_with_seed(&mut self, x: u8, y: u8, seed: u64) {
         if !self.first_open {
             // DO NOT GENERATE MINES if a cell on the board has already been opened.

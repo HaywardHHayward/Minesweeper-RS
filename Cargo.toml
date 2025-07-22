@@ -14,6 +14,9 @@ publish = false
 [profile.release]
 lto = "thin"
 
+[features]
+benching = []
+
 [dependencies]
 rand = "0.9.0"
 iced = { version = "0.14.0-dev", git = "https://github.com/iced-rs/iced.git", features = ["image", "tokio"] }
@@ -31,5 +34,6 @@ walkdir = "2.5"
 criterion = { version = "0.6", features = ["html_reports"] }
 
 [[bench]]
+required-features = ["benching"]
 name = "benches"
 harness = false
