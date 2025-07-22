@@ -46,6 +46,8 @@
     zip.finish().unwrap_or_else(|e| {
         panic!("Failed to finalize zip archive. Error: {e:?}");
     });
+    println!("cargo::rerun-if-changed=build.rs");
+    println!("cargo::rerun-if-changed=assets");
 }
 
 fn main() {
