@@ -73,9 +73,23 @@ impl ScreenTrait for About {
             span(" crate, by Andrew Gallan")
         ]
         .on_link_click(iced::never);
+        let local_vec = GuiWidget::rich_text![
+            span("The "),
+            span("local_vec").font(bold_font),
+            span(" crate, by Jorge Rinaldi")
+        ]
+        .on_link_click(iced::never);
 
-        let library_text =
-            GuiWidget::column![rand, iced, serde, serde_yml, directories, zip, walkdir];
+        let library_text = GuiWidget::column![
+            rand,
+            iced,
+            serde,
+            serde_yml,
+            directories,
+            zip,
+            walkdir,
+            local_vec
+        ];
 
         let about_text = GuiWidget::column![intro_message, library_text]
             .align_x(iced::Center)

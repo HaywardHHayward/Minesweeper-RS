@@ -222,11 +222,11 @@ impl Board {
         }
         cell.toggle_flag();
     }
-    pub fn get_state(&self) -> BoardState {
+    pub const fn get_state(&self) -> BoardState {
         self.state
     }
     fn get_surrounding_coordinates(&self, x: u8, y: u8) -> impl Iterator<Item = (u8, u8)> + use<> {
-        let mut coordinates = Vec::with_capacity(8);
+        let mut coordinates = local_vec::LocalVec::<_, 8>::new();
         for x_new in x.saturating_sub(1)..=x.saturating_add(1) {
             if x_new >= self.get_width() {
                 continue;
