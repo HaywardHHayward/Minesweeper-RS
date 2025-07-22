@@ -73,10 +73,10 @@ impl ScreenTrait for About {
             span(" crate, by Andrew Gallan")
         ]
         .on_link_click(iced::never);
-        let local_vec = GuiWidget::rich_text![
+        let tinyvec = GuiWidget::rich_text![
             span("The "),
-            span("local_vec").font(bold_font),
-            span(" crate, by Jorge Rinaldi")
+            span("tinyvec").font(bold_font),
+            span(" crate, by Lokathor")
         ]
         .on_link_click(iced::never);
 
@@ -88,7 +88,7 @@ impl ScreenTrait for About {
             directories,
             zip,
             walkdir,
-            local_vec
+            tinyvec
         ];
 
         let about_text = GuiWidget::column![intro_message, library_text]

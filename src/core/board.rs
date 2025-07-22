@@ -226,7 +226,7 @@ impl Board {
         self.state
     }
     fn get_surrounding_coordinates(&self, x: u8, y: u8) -> impl Iterator<Item = (u8, u8)> + use<> {
-        let mut coordinates = local_vec::LocalVec::<_, 8>::new();
+        let mut coordinates = tinyvec::ArrayVec::<[_; 8]>::new();
         for x_new in x.saturating_sub(1)..=x.saturating_add(1) {
             if x_new >= self.get_width() {
                 continue;
@@ -250,18 +250,19 @@ impl Board {
         }
         let mut rng = SmallRng::from_os_rng();
         let total_area = self.get_width() as u16 * self.get_height() as u16;
-        let mut surrounding_coordinates =
-            self.get_surrounding_coordinates(x, y).collect::<Vec<_>>();
+        let surrounding_coordinates = self
+            .get_surrounding_coordinates(x, y)
+            .collect::<tinyvec::ArrayVec<[_; 8]>>();
         // In order to make the game more fun, I try and avoid placing mines in the
         // cells surrounding the cell selected. However, if the number of mines is too
         // high, this may not be possible, and therefore must be accounted for.
         let too_many_mines =
             total_area - (surrounding_coordinates.len() as u16 + 1) < self.mine_count.get();
-        let mut disallowed_coordinates: Vec<(u8, u8)> = vec![(x, y)];
+        let mut disallowed_coordinates = tinyvec::array_vec!([_; 9] => (x,y));
         // If we have enough space, we will not place mines in the cells surrounding the
         // cell specified
         if !too_many_mines {
-            disallowed_coordinates.append(&mut surrounding_coordinates);
+            disallowed_coordinates.extend_from_slice(surrounding_coordinates.as_slice());
         }
         let mut possible_coordinates = Vec::with_capacity(total_area as usize);
         // Can't find a more clever way to do this, so I just iterate through all the
@@ -294,18 +295,19 @@ impl Board {
         }
         let mut rng = SmallRng::seed_from_u64(seed);
         let total_area = self.get_width() as u16 * self.get_height() as u16;
-        let mut surrounding_coordinates =
-            self.get_surrounding_coordinates(x, y).collect::<Vec<_>>();
+        let surrounding_coordinates = self
+            .get_surrounding_coordinates(x, y)
+            .collect::<tinyvec::ArrayVec<[_; 8]>>();
         // In order to make the game more fun, I try and avoid placing mines in the
         // cells surrounding the cell selected. However, if the number of mines is too
         // high, this may not be possible, and therefore must be accounted for.
         let too_many_mines =
             total_area - (surrounding_coordinates.len() as u16 + 1) < self.mine_count.get();
-        let mut disallowed_coordinates: Vec<(u8, u8)> = vec![(x, y)];
+        let mut disallowed_coordinates = tinyvec::array_vec!([_; 9] => (x,y));
         // If we have enough space, we will not place mines in the cells surrounding the
         // cell specified
         if !too_many_mines {
-            disallowed_coordinates.append(&mut surrounding_coordinates);
+            disallowed_coordinates.extend_from_slice(surrounding_coordinates.as_slice());
         }
         let mut possible_coordinates = Vec::with_capacity(total_area as usize);
         // Can't find a more clever way to do this, so I just iterate through all the
