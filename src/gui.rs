@@ -17,6 +17,10 @@ pub fn subscription(state: &Application) -> Subscription<PublicMessage> {
     state.subscription().map(PublicMessage)
 }
 
+pub fn theme(state: &Application) -> iced::Theme {
+    state.theme()
+}
+
 /// Trait that defines the interface for screens in the application. Based on
 /// the Elm architecture.
 pub(crate) trait ScreenTrait: std::fmt::Debug {
@@ -57,6 +61,12 @@ impl Application {
     pub(crate) fn app_dirs() -> directories::ProjectDirs {
         directories::ProjectDirs::from("", "HaywardHHayward", "Minesweeper")
             .expect("Failed to get project directories")
+    }
+    pub(crate) fn theme(&self) -> iced::Theme {
+        match self.config.get_menu_theme() {
+            config::MenuTheme::Light => iced::Theme::Light,
+            config::MenuTheme::Dark => iced::Theme::Dark,
+        }
     }
 }
 

@@ -19,7 +19,7 @@ pub(crate) enum GameTheme {
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
 pub(crate) enum MenuTheme {
     Light,
-    // TODO: Dark
+    Dark,
 }
 
 impl Display for GameTheme {
@@ -34,6 +34,7 @@ impl Display for MenuTheme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
             MenuTheme::Light => "Light",
+            MenuTheme::Dark => "Dark",
         })
     }
 }
