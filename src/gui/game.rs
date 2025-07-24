@@ -110,7 +110,9 @@ impl ScreenTrait for Game {
                 Some(content)
             }
         };
-        game_content = game_content.push_maybe(extra_content);
+        if let Some(extra) = extra_content {
+            game_content = game_content.push(extra);
+        }
         let content = GuiWidget::center(game_content);
         content.into()
     }
