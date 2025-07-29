@@ -67,12 +67,17 @@ impl ScreenTrait for GameSelection {
                         )));
                     }
                 };
-                let game = crate::gui::game::Game::new(board);
-                Task::done(AppMessage::InitializeScreen {
-                    screen_type: crate::gui::ScreenType::Game,
-                    initializer_fn: Box::new(|| crate::gui::Screen::Game(game)),
-                    change_screen: true,
-                })
+                Task::done(AppMessage::SendConfig(Box::new(|config| {
+                    AppMessage::InitializeScreen {
+                        screen_type: crate::gui::ScreenType::Game,
+                        initializer_fn: Box::new(move |_| {
+                            crate::gui::Screen::Game(crate::gui::game::Game::new(
+                                board,
+                                *config.get_game_theme(),
+                            ))
+                        }),
+                    }
+                })))
             }
             Self::Message::GoToCustom => {
                 // Transition to custom selection screen
@@ -118,14 +123,17 @@ impl ScreenTrait for GameSelection {
                 {
                     let board_result = Board::create_custom(width_num, height_num, mines_num);
                     match board_result {
-                        Ok(board) => {
-                            let game = crate::gui::game::Game::new(board);
-                            Task::done(AppMessage::InitializeScreen {
+                        Ok(board) => Task::done(AppMessage::SendConfig(Box::new(|config| {
+                            AppMessage::InitializeScreen {
                                 screen_type: crate::gui::ScreenType::Game,
-                                initializer_fn: Box::new(|| crate::gui::Screen::Game(game)),
-                                change_screen: true,
-                            })
-                        }
+                                initializer_fn: Box::new(move |_| {
+                                    crate::gui::Screen::Game(crate::gui::game::Game::new(
+                                        board,
+                                        *config.get_game_theme(),
+                                    ))
+                                }),
+                            }
+                        }))),
                         Err(board_error) => {
                             *error = Some(vec![GameSelectionError::BoardCreate(board_error)]);
                             Task::none()

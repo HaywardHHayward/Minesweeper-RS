@@ -1,22 +1,23 @@
 ﻿use std::{fmt::Display, fs::File, path::Path};
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, Copy)]
 pub(crate) struct Config {
     theme: Theme,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, Copy)]
 struct Theme {
     game_theme: GameTheme,
     menu_theme: MenuTheme,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, Copy, PartialEq)]
 pub(crate) enum GameTheme {
     Default,
+    Classic,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, PartialEq)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, Copy, PartialEq)]
 pub(crate) enum MenuTheme {
     Light,
     Dark,
@@ -26,6 +27,7 @@ impl Display for GameTheme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
             GameTheme::Default => "Default",
+            GameTheme::Classic => "Classic",
         })
     }
 }

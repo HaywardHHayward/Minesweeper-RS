@@ -20,12 +20,11 @@ impl ScreenTrait for MainMenu {
         match message {
             Self::Message::StartGame => Task::done(AppMessage::InitializeScreen {
                 screen_type: ScreenType::GameSelection,
-                initializer_fn: Box::new(|| {
+                initializer_fn: Box::new(|_| {
                     crate::gui::Screen::GameSelection(
                         crate::gui::game_selection::GameSelection::default(),
                     )
                 }),
-                change_screen: true,
             }),
             Self::Message::Settings => {
                 Task::done(AppMessage::ChangeScreen(ScreenType::SettingsScreen))

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use iced::{Element, Subscription, Task};
 
+mod assets;
 mod config;
 
 pub fn update(state: &mut Application, message: PublicMessage) -> Task<PublicMessage> {
@@ -113,23 +114,11 @@ impl ScreenTrait for Application {
         match message {
             Message::InitializeScreen {
                 screen_type,
-                initializer_fn: callback,
-                change_screen,
-            } => Task::done(Message::InitializedScreen {
-                screen_type,
-                initialized_screen: callback(),
-            })
-            .chain(if change_screen {
-                Task::done(Message::ChangeScreen(screen_type))
-            } else {
-                Task::none()
-            }),
-            Message::InitializedScreen {
-                screen_type,
-                initialized_screen: screen,
+                initializer_fn,
             } => {
-                // Logic to handle the initialized screen can be added here
+                let screen = initializer_fn(());
                 self.screens.insert(screen_type, screen);
+                self.current_screen = screen_type;
                 Task::none()
             }
             Message::ChangeScreen(screen_type) => {
@@ -150,6 +139,10 @@ impl ScreenTrait for Application {
                     config::Config::load(&Self::app_dirs().config_dir().join("config.yaml"))
                         .unwrap();
                 Task::none()
+            }
+            Message::SendConfig(callback) => {
+                let config = self.config.clone();
+                Task::done(callback(config))
             }
         }
     }
@@ -173,8 +166,6 @@ impl ScreenTrait for Application {
             .map(Message::ScreenAction)
     }
 }
-
-type Callback<Output> = Box<dyn FnOnce() -> Output + Send + Sync>;
 
 // Automatically adds new screen modules, new variants to ScreenMessage and
 // ScreenType, and automatically adds the new screen types to Screen::update,
@@ -231,19 +222,17 @@ create_screens! {
 #[derive(Debug)]
 pub struct PublicMessage(Message);
 
+type Callback<Input, Output> = Box<dyn FnOnce(Input) -> Output + Send + Sync>;
+
 pub(crate) enum Message {
     InitializeScreen {
         screen_type: ScreenType,
-        initializer_fn: Callback<Screen>,
-        change_screen: bool,
-    },
-    InitializedScreen {
-        screen_type: ScreenType,
-        initialized_screen: Screen,
+        initializer_fn: Callback<(), Screen>,
     },
     ChangeScreen(ScreenType),
     ScreenAction(ScreenMessage),
     ReadConfig,
+    SendConfig(Callback<config::Config, Message>),
 }
 
 impl std::fmt::Debug for Message {
@@ -252,25 +241,13 @@ impl std::fmt::Debug for Message {
             Message::InitializeScreen {
                 screen_type,
                 initializer_fn: _,
-                change_screen,
             } => {
-                write!(
-                    f,
-                    "InitializeScreen({screen_type:?}, .. , {change_screen:?})"
-                )
-            }
-            Message::InitializedScreen {
-                screen_type,
-                initialized_screen,
-            } => {
-                write!(
-                    f,
-                    "InitializedScreen({screen_type:?}, {initialized_screen:?})"
-                )
+                write!(f, "InitializeScreen({screen_type:?}, .. )")
             }
             Message::ChangeScreen(screen_type) => write!(f, "ChangeScreen({screen_type:?})"),
             Message::ScreenAction(action) => write!(f, "ScreenAction({action:?})"),
             Message::ReadConfig => write!(f, "ReadConfig"),
+            Message::SendConfig(_) => write!(f, "SendConfig(..)"),
         }
     }
 }

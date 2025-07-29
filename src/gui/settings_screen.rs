@@ -54,7 +54,7 @@ impl ScreenTrait for SettingsScreen {
             Some(self.config.get_menu_theme()),
             Self::Message::MenuThemeSelected,
         );
-        let game_themes = [GameTheme::Default];
+        let game_themes = [GameTheme::Default, GameTheme::Classic];
         let game_theme = GuiWidget::pick_list(
             game_themes,
             Some(self.config.get_game_theme()),
