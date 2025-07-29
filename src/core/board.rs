@@ -264,28 +264,25 @@ impl Board {
         if !too_many_mines {
             disallowed_coordinates.extend_from_slice(surrounding_coordinates.as_slice());
         }
-        let mut possible_coordinates = Vec::with_capacity(total_area as usize);
-        // Can't find a more clever way to do this, so I just iterate through all the
-        // possible coordinates and do not push them into the possible coordinates if
-        // they're disallowed. If you have a better idea, please let me know.
-        for cell_x in 0..self.get_width() {
-            for cell_y in 0..self.get_height() {
-                if disallowed_coordinates.contains(&(cell_x, cell_y)) {
-                    continue;
+        let possible_coordinates = (0..self.width.get()).flat_map(|x| {
+            (0..self.height.get()).filter_map(move |y| {
+                if disallowed_coordinates.contains(&(x, y)) {
+                    None
+                } else {
+                    Some((x, y))
                 }
-                possible_coordinates.push((cell_x, cell_y));
-            }
-        }
+            })
+        });
         let mined_coordinates =
             possible_coordinates.choose_multiple(&mut rng, self.mine_count.get() as usize);
         for (mine_x, mine_y) in mined_coordinates {
-            for (cell_x, cell_y) in self.get_surrounding_coordinates(*mine_x, *mine_y) {
+            for (cell_x, cell_y) in self.get_surrounding_coordinates(mine_x, mine_y) {
                 self.get_cell_mut(cell_x, cell_y)
                     .unwrap()
                     .increment_adjacent_mines();
             }
-            self.get_cell_mut(*mine_x, *mine_y).unwrap().become_mined();
-            self.mined_coordinates.insert((*mine_x, *mine_y));
+            self.get_cell_mut(mine_x, mine_y).unwrap().become_mined();
+            self.mined_coordinates.insert((mine_x, mine_y));
         }
     }
     #[cfg(feature = "benching")]
@@ -310,28 +307,25 @@ impl Board {
         if !too_many_mines {
             disallowed_coordinates.extend_from_slice(surrounding_coordinates.as_slice());
         }
-        let mut possible_coordinates = Vec::with_capacity(total_area as usize);
-        // Can't find a more clever way to do this, so I just iterate through all the
-        // possible coordinates and do not push them into the possible coordinates if
-        // they're disallowed. If you have a better idea, please let me know.
-        for cell_x in 0..self.get_width() {
-            for cell_y in 0..self.get_height() {
-                if disallowed_coordinates.contains(&(cell_x, cell_y)) {
-                    continue;
+        let possible_coordinates = (0..self.width.get()).flat_map(|x| {
+            (0..self.height.get()).filter_map(move |y| {
+                if disallowed_coordinates.contains(&(x, y)) {
+                    None
+                } else {
+                    Some((x, y))
                 }
-                possible_coordinates.push((cell_x, cell_y));
-            }
-        }
+            })
+        });
         let mined_coordinates =
             possible_coordinates.choose_multiple(&mut rng, self.mine_count.get() as usize);
         for (mine_x, mine_y) in mined_coordinates {
-            for (cell_x, cell_y) in self.get_surrounding_coordinates(*mine_x, *mine_y) {
+            for (cell_x, cell_y) in self.get_surrounding_coordinates(mine_x, mine_y) {
                 self.get_cell_mut(cell_x, cell_y)
                     .unwrap()
                     .increment_adjacent_mines();
             }
-            self.get_cell_mut(*mine_x, *mine_y).unwrap().become_mined();
-            self.mined_coordinates.insert((*mine_x, *mine_y));
+            self.get_cell_mut(mine_x, mine_y).unwrap().become_mined();
+            self.mined_coordinates.insert((mine_x, mine_y));
         }
     }
 }
@@ -373,14 +367,20 @@ mod testing {
     #[test]
     fn test_board_get_cell() {
         let mut board = create_board(5, 5, 5).unwrap();
-        assert!(board.get_cell(5, 5).is_none());
-        assert!(board.get_cell(4, 5).is_none());
-        assert!(board.get_cell(5, 4).is_none());
-        assert!(board.get_cell(4, 4).is_some());
-        assert!(board.get_cell_mut(5, 5).is_none());
-        assert!(board.get_cell_mut(4, 5).is_none());
-        assert!(board.get_cell_mut(5, 4).is_none());
-        assert!(board.get_cell_mut(4, 4).is_some());
+        for x in 0..5 {
+            for y in 0..5 {
+                let cell = board.get_cell(x, y);
+                if x < 5 && y < 5 {
+                    assert!(cell.is_some());
+                    let cell = board.get_cell_mut(x, y);
+                    assert!(cell.is_some());
+                } else {
+                    assert!(cell.is_none());
+                    let cell = board.get_cell_mut(x, y);
+                    assert!(cell.is_none());
+                }
+            }
+        }
     }
     #[test]
     fn test_board_check_normal() {
