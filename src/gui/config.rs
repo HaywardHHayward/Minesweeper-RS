@@ -3,6 +3,7 @@
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone, Copy)]
 pub(crate) struct Config {
     theme: Theme,
+    scale_factor: f64,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone, Copy)]
@@ -48,6 +49,7 @@ impl Default for Config {
                 game_theme: GameTheme::Default,
                 menu_theme: MenuTheme::Light,
             },
+            scale_factor: 1.0,
         }
     }
 }
@@ -78,5 +80,12 @@ impl Config {
 
     pub(crate) fn get_game_theme(&self) -> &GameTheme {
         &self.theme.game_theme
+    }
+
+    pub(crate) fn get_scale_factor(&self) -> f64 {
+        self.scale_factor
+    }
+    pub(crate) fn update_scale_factor(&mut self, scale: f64) {
+        self.scale_factor = scale;
     }
 }

@@ -13,6 +13,7 @@ pub(crate) enum Action {
     ReturnToMainMenu,
     MenuThemeSelected(MenuTheme),
     GameThemeSelected(GameTheme),
+    ScaleFactorSelected(f64),
     ApplyChanges,
 }
 
@@ -39,6 +40,10 @@ impl ScreenTrait for SettingsScreen {
                 self.config.update_game_theme(game);
                 Task::none()
             }
+            Self::Message::ScaleFactorSelected(scale) => {
+                self.config.update_scale_factor(scale);
+                Task::none()
+            }
             Self::Message::ApplyChanges => {
                 self.config
                     .save(&Application::app_dirs().config_dir().join("config.yaml"));
@@ -60,8 +65,23 @@ impl ScreenTrait for SettingsScreen {
             Some(self.config.get_game_theme()),
             Self::Message::GameThemeSelected,
         );
+        let slider = GuiWidget::slider(
+            0.5..=2.0,
+            self.config.get_scale_factor(),
+            Self::Message::ScaleFactorSelected,
+        )
+        .step(0.1)
+        .width(iced::Length::Fixed(100f32));
+        let slider_label = GuiWidget::text!("Scale Factor: {:.1}", self.config.get_scale_factor());
+        let slider_content = GuiWidget::row![slider_label, slider]
+            .spacing(10)
+            .align_y(iced::Alignment::Center)
+            .padding(10);
+
         let apply = GuiWidget::button("Apply changes").on_press(Self::Message::ApplyChanges);
-        let options = GuiWidget::column![menu_theme, game_theme, apply].align_x(iced::Center);
+        let options = GuiWidget::column![menu_theme, game_theme, slider_content, apply]
+            .align_x(iced::Center)
+            .spacing(10);
 
         let buttons =
             GuiWidget::button("Return to Main Menu").on_press(Self::Message::ReturnToMainMenu);

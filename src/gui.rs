@@ -22,6 +22,10 @@ pub fn theme(state: &Application) -> iced::Theme {
     state.theme()
 }
 
+pub fn scale_factor(state: &Application) -> f64 {
+    state.config.get_scale_factor()
+}
+
 /// Trait that defines the interface for screens in the application. Based on
 /// the Elm architecture.
 pub(crate) trait ScreenTrait: std::fmt::Debug {

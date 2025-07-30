@@ -5,5 +5,6 @@ pub fn main() -> iced::Result {
         .settings(iced::Settings::default())
         .subscription(subscription)
         .theme(theme)
+        .scale_factor(scale_factor)
         .run()
 }
