@@ -30,7 +30,7 @@ impl ScreenTrait for MainMenu {
                 Task::done(AppMessage::ChangeScreen(ScreenType::SettingsScreen))
             }
             Self::Message::About => Task::done(AppMessage::ChangeScreen(ScreenType::About)),
-            Self::Message::Exit => iced::exit(),
+            Self::Message::Exit => Task::done(AppMessage::CloseApp),
         }
     }
 

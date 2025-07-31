@@ -73,6 +73,13 @@ impl Application {
             config::MenuTheme::Dark => iced::Theme::Dark,
         }
     }
+    pub(crate) fn clear_cache(&mut self) -> Result<(), std::io::Error> {
+        let cache_dir = Self::app_dirs().cache_dir().to_path_buf();
+        if cache_dir.exists() {
+            std::fs::remove_dir_all(&cache_dir)?;
+        }
+        Ok(())
+    }
 }
 
 impl Default for Application {
@@ -101,7 +108,7 @@ impl Default for Application {
         screens.insert(ScreenType::MainMenu, Screen::MainMenu(main_menu::MainMenu));
         screens.insert(
             ScreenType::SettingsScreen,
-            Screen::SettingsScreen(settings_screen::SettingsScreen::new(config.clone())),
+            Screen::SettingsScreen(settings_screen::SettingsScreen::new(config)),
         );
         screens.insert(ScreenType::About, Screen::About(about::About));
         Application {
@@ -145,8 +152,15 @@ impl ScreenTrait for Application {
                 Task::none()
             }
             Message::SendConfig(callback) => {
-                let config = self.config.clone();
+                let config = self.config;
                 Task::done(callback(config))
+            }
+            Message::CloseApp => {
+                let cache_cleared = self.clear_cache();
+                if let Err(e) = cache_cleared {
+                    eprintln!("Failed to clear cache: {e}");
+                }
+                iced::exit()
             }
         }
     }
@@ -163,11 +177,14 @@ impl ScreenTrait for Application {
         // Retrieve the current screen and call its subscription method, for now we
         // panic if the screen is not found, but this should be handled more
         // gracefully
-        self.screens
+        let close_request = iced::window::close_requests().map(|_| Message::CloseApp);
+        let screen_subscription = self
+            .screens
             .get(&self.current_screen)
             .unwrap_or_else(|| panic!("current_screen {:?} not found", self.current_screen))
             .subscription()
-            .map(Message::ScreenAction)
+            .map(Message::ScreenAction);
+        Subscription::batch([close_request, screen_subscription])
     }
 }
 
@@ -237,6 +254,7 @@ pub(crate) enum Message {
     ScreenAction(ScreenMessage),
     ReadConfig,
     SendConfig(Callback<config::Config, Message>),
+    CloseApp,
 }
 
 impl std::fmt::Debug for Message {
@@ -252,6 +270,7 @@ impl std::fmt::Debug for Message {
             Message::ScreenAction(action) => write!(f, "ScreenAction({action:?})"),
             Message::ReadConfig => write!(f, "ReadConfig"),
             Message::SendConfig(_) => write!(f, "SendConfig(..)"),
+            Message::CloseApp => write!(f, "CloseApp"),
         }
     }
 }
