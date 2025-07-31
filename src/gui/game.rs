@@ -137,8 +137,11 @@ macro_rules! impl_game_image {
             $(
                 fn $function_name(&self) -> Element<'_, Action> {
                     match self.game_theme {
-                        GameTheme::Default => GuiImage::Image::new(GuiImage::Handle::from_bytes(
-                            crate::gui::assets::default::$static_name.as_slice(),
+                        GameTheme::SimpleLight => GuiSvg::Svg::new(GuiSvg::Handle::from_memory(
+                            crate::gui::assets::simple_light::$static_name.as_slice(),
+                        )).into(),
+                        GameTheme::SimpleDark => GuiSvg::Svg::new(GuiSvg::Handle::from_memory(
+                            crate::gui::assets::simple_dark::$static_name.as_slice(),
                         )).into(),
                         GameTheme::Classic => GuiSvg::Svg::new(GuiSvg::Handle::from_memory(
                             crate::gui::assets::classic::$static_name.as_slice(),

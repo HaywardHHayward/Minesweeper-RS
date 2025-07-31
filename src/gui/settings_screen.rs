@@ -59,7 +59,11 @@ impl ScreenTrait for SettingsScreen {
             Some(self.config.get_menu_theme()),
             Self::Message::MenuThemeSelected,
         );
-        let game_themes = [GameTheme::Default, GameTheme::Classic];
+        let game_themes = [
+            GameTheme::SimpleLight,
+            GameTheme::SimpleDark,
+            GameTheme::Classic,
+        ];
         let game_theme = GuiWidget::pick_list(
             game_themes,
             Some(self.config.get_game_theme()),
@@ -71,7 +75,7 @@ impl ScreenTrait for SettingsScreen {
             Self::Message::ScaleFactorSelected,
         )
         .step(0.1)
-        .width(iced::Length::Fixed(100f32));
+        .width(iced::Length::Fixed(200f32));
         let slider_label = GuiWidget::text!("Scale Factor: {:.1}", self.config.get_scale_factor());
         let slider_content = GuiWidget::row![slider_label, slider]
             .spacing(10)

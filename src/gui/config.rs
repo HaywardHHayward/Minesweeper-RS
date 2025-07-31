@@ -14,7 +14,8 @@ struct Theme {
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, Clone, Copy, PartialEq)]
 pub(crate) enum GameTheme {
-    Default,
+    SimpleLight,
+    SimpleDark,
     Classic,
 }
 
@@ -27,7 +28,8 @@ pub(crate) enum MenuTheme {
 impl Display for GameTheme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            GameTheme::Default => "Default",
+            GameTheme::SimpleLight => "Simple (Light)",
+            GameTheme::SimpleDark => "Simple (Dark)",
             GameTheme::Classic => "Classic",
         })
     }
@@ -46,7 +48,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             theme: Theme {
-                game_theme: GameTheme::Default,
+                game_theme: GameTheme::SimpleLight,
                 menu_theme: MenuTheme::Light,
             },
             scale_factor: 1.0,
