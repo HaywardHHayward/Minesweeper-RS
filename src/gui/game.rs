@@ -192,6 +192,7 @@ impl Game {
             let open_image = self.opened_cell();
             stack = stack.push(open_image);
             if cell.is_mine() {
+                // Replace mine image with specifically the hit mine image
                 let mine_image = cell_container(self.mine());
                 stack = stack.push(mine_image);
             } else if let Some(adjacent_mines) = cell.adjacent_mines()
@@ -219,11 +220,42 @@ impl Game {
                 stack = stack.push(cell_container(text));
             }
         } else {
-            let unopened_image = self.unopened_cell();
-            stack = stack.push(unopened_image);
-            if cell.is_flagged() {
-                let flag_image = cell_container(self.flag());
-                stack = stack.push(flag_image);
+            match self.board.get_state() {
+                BoardState::InProgress => {
+                    let unopened_image = self.unopened_cell();
+                    stack = stack.push(unopened_image);
+                    if cell.is_flagged() {
+                        let flag_image = cell_container(self.flag());
+                        stack = stack.push(flag_image);
+                    }
+                }
+                BoardState::Won => {
+                    let unopened_image = self.unopened_cell();
+                    stack = stack.push(unopened_image);
+                    if cell.is_mine() || cell.is_flagged() {
+                        let flag_image = cell_container(self.flag());
+                        stack = stack.push(flag_image);
+                    }
+                }
+                BoardState::Lost => {
+                    if cell.is_mine() && !cell.is_flagged() {
+                        let opened_image = self.opened_cell();
+                        let mine_image = cell_container(self.mine());
+                        stack = stack.extend([opened_image, mine_image]);
+                    } else if !cell.is_mine() && cell.is_flagged() {
+                        let opened_image = self.opened_cell();
+                        // TODO: Add wrong flag image, for now it will simple be the flag itself
+                        let flag_image = cell_container(self.flag());
+                        stack = stack.extend([opened_image, flag_image]);
+                    } else {
+                        let unopened_image = self.unopened_cell();
+                        stack = stack.push(unopened_image);
+                        if cell.is_flagged() {
+                            let flag_image = cell_container(self.flag());
+                            stack = stack.push(flag_image);
+                        }
+                    }
+                }
             }
         }
         stack.width(16).height(16)
