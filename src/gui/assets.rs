@@ -169,6 +169,7 @@ pub(crate) mod simple_dark {
     });
 }
 
+#[cfg(feature = "non-free")]
 pub(crate) mod classic {
     use std::sync::LazyLock;
 

@@ -62,6 +62,7 @@ impl ScreenTrait for SettingsScreen {
         let game_themes = [
             GameTheme::SimpleLight,
             GameTheme::SimpleDark,
+            #[cfg(feature = "non-free")]
             GameTheme::Classic,
         ];
         let game_theme = GuiWidget::pick_list(

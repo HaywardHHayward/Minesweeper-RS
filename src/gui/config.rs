@@ -16,6 +16,7 @@ struct Theme {
 pub(crate) enum GameTheme {
     SimpleLight,
     SimpleDark,
+    #[cfg(feature = "non-free")]
     Classic,
 }
 
@@ -30,6 +31,7 @@ impl Display for GameTheme {
         f.write_str(match self {
             GameTheme::SimpleLight => "Simple (Light)",
             GameTheme::SimpleDark => "Simple (Dark)",
+            #[cfg(feature = "non-free")]
             GameTheme::Classic => "Classic",
         })
     }

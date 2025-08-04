@@ -3,10 +3,7 @@
     time::Instant,
 };
 
-use iced::{
-    Element, Font, Subscription, Task, widget as GuiWidget,
-    widget::{image as GuiImage, svg as GuiSvg},
-};
+use iced::{Element, Font, Subscription, Task, widget as GuiWidget, widget::svg as GuiSvg};
 
 use crate::{
     core::{board::*, cell::*},
@@ -143,9 +140,10 @@ macro_rules! impl_game_image {
                         GameTheme::SimpleDark => GuiSvg::Svg::new(GuiSvg::Handle::from_memory(
                             crate::gui::assets::simple_dark::$static_name.as_slice(),
                         )).into(),
+                        #[cfg(feature = "non-free")]
                         GameTheme::Classic => GuiSvg::Svg::new(GuiSvg::Handle::from_memory(
                             crate::gui::assets::classic::$static_name.as_slice(),
-                        )).into(),
+                        )).into()
                     }
                 }
             )*

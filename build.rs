@@ -1,4 +1,16 @@
-﻿fn compress_assets() {
+﻿#[cfg(not(feature = "non-free"))]
+const NON_FREE_DIRS: [&str; 1] = ["classic"];
+
+fn exclude_files(entry: &walkdir::DirEntry) -> bool {
+    #[cfg(not(feature = "non-free"))]
+    if entry.file_type().is_dir() {
+        // Exclude directories that are not free
+        return !NON_FREE_DIRS.contains(&entry.file_name().to_string_lossy().as_ref());
+    }
+    entry.file_name().to_string_lossy() != "LICENSE"
+}
+
+fn compress_assets() {
     use std::io::{Read, Write};
 
     use walkdir::WalkDir;
@@ -13,15 +25,8 @@
     for entry in assets_dir
         .contents_first(false)
         .into_iter()
-        .filter_map(|e| {
-            e.ok().and_then(|e| {
-                if e.file_name().to_string_lossy() != "LICENSE" {
-                    Some(e)
-                } else {
-                    None
-                }
-            })
-        })
+        .filter_entry(exclude_files)
+        .filter_map(|e| e.ok())
     {
         if entry.file_type().is_dir() {
             zip.add_directory_from_path(entry.path(), options)
