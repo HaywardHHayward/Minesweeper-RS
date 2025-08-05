@@ -85,33 +85,14 @@ impl ScreenTrait for Game {
         }
     }
     fn view(&self) -> Element<'_, Self::Message> {
-        let mut board_view = GuiWidget::Column::with_capacity(self.board.get_height() as usize);
-        for y in 0..self.board.get_height() {
-            let mut row = GuiWidget::Row::with_capacity(self.board.get_width() as usize);
-            for x in 0..self.board.get_width() {
-                row = row.push(self.cell(x, y));
-            }
-            board_view = board_view.push(row);
-        }
-        let mut game_content =
-            GuiWidget::column![self.top_menu().into(), board_view].align_x(iced::Center);
-        let extra_content = match self.board.get_state() {
-            BoardState::InProgress => None,
-            BoardState::Won => {
-                let win_text = GuiWidget::text("You found all the mines. You win!");
-                let return_button = GuiWidget::button("Return to main menu")
-                    .on_press(Self::Message::ReturnToMainMenu);
-                let content = GuiWidget::column![win_text, return_button].align_x(iced::Center);
-                Some(content)
-            }
-            BoardState::Lost => {
-                let lose_text = GuiWidget::text("You hit a mine! You lose!");
-                let return_button = GuiWidget::button("Return to main menu")
-                    .on_press(Self::Message::ReturnToMainMenu);
-                let content = GuiWidget::column![lose_text, return_button].align_x(iced::Center);
-                Some(content)
-            }
-        };
+        let board_view = GuiWidget::container(self.board())
+            .style(GuiWidget::container::bordered_box)
+            .padding(10);
+        let top_menu_view = GuiWidget::container(self.top_menu())
+            .style(GuiWidget::container::bordered_box)
+            .padding(10);
+        let mut game_content = GuiWidget::column![top_menu_view, board_view].align_x(iced::Center);
+        let extra_content = self.end_of_screen();
         if let Some(extra) = extra_content {
             game_content = game_content.push(extra);
         }
@@ -161,28 +142,18 @@ impl_game_image!(
 );
 
 impl Game {
-    fn top_menu(&self) -> impl Into<Element<'_, Action>> {
-        let remaining_mines = GuiWidget::text!("{}", self.board.get_remaining_mines());
-        let reset_button = GuiWidget::button(":)").on_press(Action::ResetGame);
-        let time_elapsed = (self.current_time - self.start_time).as_secs();
-        let timer = if time_elapsed < 60 {
-            GuiWidget::text!("{time_elapsed}").font(Font::MONOSPACE)
-        } else if time_elapsed < (99 * 60) + 59 {
-            GuiWidget::text!(
-                "{minutes}:{seconds:02}",
-                minutes = time_elapsed.div_euclid(60),
-                seconds = time_elapsed.rem_euclid(60)
-            )
-            .font(Font::MONOSPACE)
-        } else {
-            GuiWidget::text("99:59").font(Font::MONOSPACE)
-        };
-        let content = GuiWidget::row![
-            GuiWidget::container(remaining_mines).width(iced::Fill),
-            GuiWidget::center_x(reset_button),
-            GuiWidget::right(timer)
-        ];
-        content.width((self.board.get_width() as usize * 16) as f32)
+    fn board(&self) -> impl Into<Element<'_, Action>> {
+        let mut board_view = GuiWidget::Grid::with_capacity(
+            self.board.get_height() as usize * self.board.get_width() as usize,
+        )
+        .columns(self.board.get_width() as usize)
+        .width(self.board.get_width() as f32 * 16.0);
+        for y in 0..self.board.get_height() {
+            for x in 0..self.board.get_width() {
+                board_view = board_view.push(self.cell(x, y));
+            }
+        }
+        board_view
     }
     fn cell_view(&self, cell: &Cell) -> Element<'_, Action> {
         #[inline]
@@ -221,7 +192,7 @@ impl Game {
                         .color(color);
                     stack = stack.push(cell_container(text));
                 }
-                stack.into()
+                cell_container(stack)
             }
         } else {
             match self.board.get_state() {
@@ -265,6 +236,48 @@ impl Game {
                 .into()
         } else {
             cell_view
+        }
+    }
+    fn top_menu(&self) -> impl Into<Element<'_, Action>> {
+        let remaining_mines = GuiWidget::text!("{}", self.board.get_remaining_mines());
+        let reset_button = GuiWidget::button(":)").on_press(Action::ResetGame);
+        let time_elapsed = (self.current_time - self.start_time).as_secs();
+        let timer = if time_elapsed < 60 {
+            GuiWidget::text!("{time_elapsed}").font(Font::MONOSPACE)
+        } else if time_elapsed < (99 * 60) + 59 {
+            GuiWidget::text!(
+                "{minutes}:{seconds:02}",
+                minutes = time_elapsed.div_euclid(60),
+                seconds = time_elapsed.rem_euclid(60)
+            )
+            .font(Font::MONOSPACE)
+        } else {
+            GuiWidget::text("99:59").font(Font::MONOSPACE)
+        };
+        let content = GuiWidget::row![
+            GuiWidget::container(remaining_mines).width(iced::Fill),
+            GuiWidget::center_x(reset_button),
+            GuiWidget::right(timer)
+        ];
+        content.width((self.board.get_width() as usize * 16) as f32)
+    }
+    fn end_of_screen(&self) -> Option<Element<'_, Action>> {
+        match self.board.get_state() {
+            BoardState::InProgress => None,
+            BoardState::Won => {
+                let win_text = GuiWidget::text("You found all the mines. You win!");
+                let return_button =
+                    GuiWidget::button("Return to main menu").on_press(Action::ReturnToMainMenu);
+                let content = GuiWidget::column![win_text, return_button].into();
+                Some(content)
+            }
+            BoardState::Lost => {
+                let lose_text = GuiWidget::text("You hit a mine! You lose!");
+                let return_button =
+                    GuiWidget::button("Return to main menu").on_press(Action::ReturnToMainMenu);
+                let content = GuiWidget::column![lose_text, return_button].into();
+                Some(content)
+            }
         }
     }
 }
