@@ -43,191 +43,110 @@ fn create_cache() -> Result<(), CacheError> {
     Ok(())
 }
 
-pub(crate) mod simple_light {
-    use std::sync::LazyLock;
+macro_rules! create_assets {
+    ($([$name:ident, $extension:literal$(, $attr:meta)?]),*) => {
+        $(
+            $(#[$attr])?
+            pub(crate) mod $name {
+                use std::sync::LazyLock;
 
-    use super::*;
-    pub(crate) static OPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
-        let cache_result = get_data_from_cache(std::path::Path::new("simple_light/OpenedCell.svg"));
-        match cache_result {
-            Ok(data) => data,
-            Err(CacheError::NotFound) => {
-                if let Err(e) = create_cache() {
-                    panic!("Failed to create cache: {e:?}");
-                }
-                get_data_from_cache(std::path::Path::new("simple_light/OpenedCell.svg"))
-                    .expect("Failed to read OpenedCell from cache")
+                use super::*;
+                pub(crate) static OPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
+                    let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/OpenedCell.", $extension)));
+                    match cache_result {
+                        Ok(data) => data,
+                        Err(CacheError::NotFound) => {
+                            if let Err(e) = create_cache() {
+                                panic!("Failed to create cache: {e:?}");
+                            }
+                            get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/OpenedCell.", $extension)))
+                                .expect("Failed to read OpenedCell from cache")
+                        }
+                        Err(e) => panic!("Failed to read OpenedCell from cache: {e:?}"),
+                    }
+                });
+
+                pub(crate) static UNOPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
+                    let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/UnopenedCell.", $extension)));
+                    match cache_result {
+                        Ok(data) => data,
+                        Err(CacheError::NotFound) => {
+                            if let Err(e) = create_cache() {
+                                panic!("Failed to create cache: {e:?}");
+                            }
+                            get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/UnopenedCell.", $extension)))
+                                .expect("Failed to read UnopenedCell from cache")
+                        }
+                        Err(e) => panic!("Failed to read UnopenedCell from cache: {e:?}"),
+                    }
+                });
+
+                pub(crate) static MINE: LazyLock<Vec<u8>> = LazyLock::new(|| {
+                    let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/Mine.", $extension)));
+                    match cache_result {
+                        Ok(data) => data,
+                        Err(CacheError::NotFound) => {
+                            if let Err(e) = create_cache() {
+                                panic!("Failed to create cache: {e:?}");
+                            }
+                            get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/Mine.", $extension)))
+                                .expect("Failed to read Mine from cache")
+                        }
+                        Err(e) => panic!("Failed to read Mine from cache: {e:?}"),
+                    }
+                });
+
+                pub(crate) static FLAG: LazyLock<Vec<u8>> = LazyLock::new(|| {
+                    let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/Flag.", $extension)));
+                    match cache_result {
+                        Ok(data) => data,
+                        Err(CacheError::NotFound) => {
+                            if let Err(e) = create_cache() {
+                                panic!("Failed to create cache: {e:?}");
+                            }
+                            get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/Flag.", $extension)))
+                                .expect("Failed to read Flag from cache")
+                        }
+                        Err(e) => panic!("Failed to read Flag from cache: {e:?}"),
+                    }
+                });
+
+                pub(crate) static INCORRECT_FLAG: LazyLock<Vec<u8>> = LazyLock::new(|| {
+                    let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/IncorrectFlag.", $extension)));
+                    match cache_result {
+                        Ok(data) => data,
+                        Err(CacheError::NotFound) => {
+                            if let Err(e) = create_cache() {
+                                panic!("Failed to create cache: {e:?}");
+                            }
+                            get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/IncorrectFlag.", $extension)))
+                                .expect("Failed to read IncorrectFlag from cache")
+                        }
+                        Err(e) => panic!("Failed to read IncorrectFlag from cache: {e:?}"),
+                    }
+                });
+
+                pub(crate) static EXPLODED_MINE: LazyLock<Vec<u8>> = LazyLock::new(|| {
+                    let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/ExplodedMine.", $extension)));
+                    match cache_result {
+                        Ok(data) => data,
+                        Err(CacheError::NotFound) => {
+                            if let Err(e) = create_cache() {
+                                panic!("Failed to create cache: {e:?}");
+                            }
+                            get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/ExplodedMine.", $extension)))
+                                .expect("Failed to read ExplodedMine from cache")
+                        }
+                        Err(e) => panic!("Failed to read ExplodedMine from cache: {e:?}"),
+                    }
+                });
             }
-            Err(e) => panic!("Failed to read OpenedCell from cache: {e:?}"),
-        }
-    });
-    pub(crate) static UNOPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
-        let cache_result =
-            get_data_from_cache(std::path::Path::new("simple_light/UnopenedCell.svg"));
-        match cache_result {
-            Ok(data) => data,
-            Err(CacheError::NotFound) => {
-                if let Err(e) = create_cache() {
-                    panic!("Failed to create cache: {e:?}");
-                }
-                get_data_from_cache(std::path::Path::new("simple_light/UnopenedCell.svg"))
-                    .expect("Failed to read UnopenedCell from cache")
-            }
-            Err(e) => panic!("Failed to read UnopenedCell from cache: {e:?}"),
-        }
-    });
-    pub(crate) static MINE: LazyLock<Vec<u8>> = LazyLock::new(|| {
-        let cache_result = get_data_from_cache(std::path::Path::new("simple_light/Mine.svg"));
-        match cache_result {
-            Ok(data) => data,
-            Err(CacheError::NotFound) => {
-                if let Err(e) = create_cache() {
-                    panic!("Failed to create cache: {e:?}");
-                }
-                get_data_from_cache(std::path::Path::new("simple_light/Mine.svg"))
-                    .expect("Failed to read Mine from cache")
-            }
-            Err(e) => panic!("Failed to read Mine from cache: {e:?}"),
-        }
-    });
-    pub(crate) static FLAG: LazyLock<Vec<u8>> = LazyLock::new(|| {
-        let cache_result = get_data_from_cache(std::path::Path::new("simple_light/Flag.svg"));
-        match cache_result {
-            Ok(data) => data,
-            Err(CacheError::NotFound) => {
-                if let Err(e) = create_cache() {
-                    panic!("Failed to create cache: {e:?}");
-                }
-                get_data_from_cache(std::path::Path::new("simple_light/Flag.svg"))
-                    .expect("Failed to read Flag from cache")
-            }
-            Err(e) => panic!("Failed to read Flag from cache: {e:?}"),
-        }
-    });
+        )*
+    };
 }
 
-pub(crate) mod simple_dark {
-    use std::sync::LazyLock;
-
-    use super::*;
-    pub(crate) static OPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
-        let cache_result = get_data_from_cache(std::path::Path::new("simple_dark/OpenedCell.svg"));
-        match cache_result {
-            Ok(data) => data,
-            Err(CacheError::NotFound) => {
-                if let Err(e) = create_cache() {
-                    panic!("Failed to create cache: {e:?}");
-                }
-                get_data_from_cache(std::path::Path::new("simple_dark/OpenedCell.svg"))
-                    .expect("Failed to read OpenedCell from cache")
-            }
-            Err(e) => panic!("Failed to read OpenedCell from cache: {e:?}"),
-        }
-    });
-    pub(crate) static UNOPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
-        let cache_result =
-            get_data_from_cache(std::path::Path::new("simple_dark/UnopenedCell.svg"));
-        match cache_result {
-            Ok(data) => data,
-            Err(CacheError::NotFound) => {
-                if let Err(e) = create_cache() {
-                    panic!("Failed to create cache: {e:?}");
-                }
-                get_data_from_cache(std::path::Path::new("simple_dark/UnopenedCell.svg"))
-                    .expect("Failed to read UnopenedCell from cache")
-            }
-            Err(e) => panic!("Failed to read UnopenedCell from cache: {e:?}"),
-        }
-    });
-    pub(crate) static MINE: LazyLock<Vec<u8>> = LazyLock::new(|| {
-        let cache_result = get_data_from_cache(std::path::Path::new("simple_dark/Mine.svg"));
-        match cache_result {
-            Ok(data) => data,
-            Err(CacheError::NotFound) => {
-                if let Err(e) = create_cache() {
-                    panic!("Failed to create cache: {e:?}");
-                }
-                get_data_from_cache(std::path::Path::new("simple_dark/Mine.svg"))
-                    .expect("Failed to read Mine from cache")
-            }
-            Err(e) => panic!("Failed to read Mine from cache: {e:?}"),
-        }
-    });
-    pub(crate) static FLAG: LazyLock<Vec<u8>> = LazyLock::new(|| {
-        let cache_result = get_data_from_cache(std::path::Path::new("simple_dark/Flag.svg"));
-        match cache_result {
-            Ok(data) => data,
-            Err(CacheError::NotFound) => {
-                if let Err(e) = create_cache() {
-                    panic!("Failed to create cache: {e:?}");
-                }
-                get_data_from_cache(std::path::Path::new("simple_dark/Flag.svg"))
-                    .expect("Failed to read Flag from cache")
-            }
-            Err(e) => panic!("Failed to read Flag from cache: {e:?}"),
-        }
-    });
-}
-
-#[cfg(feature = "non-free")]
-pub(crate) mod classic {
-    use std::sync::LazyLock;
-
-    use super::*;
-    pub(crate) static OPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
-        let cache_result = get_data_from_cache(std::path::Path::new("classic/OpenedCell.svg"));
-        match cache_result {
-            Ok(data) => data,
-            Err(CacheError::NotFound) => {
-                if let Err(e) = create_cache() {
-                    panic!("Failed to create cache: {e:?}");
-                }
-                get_data_from_cache(std::path::Path::new("classic/OpenedCell.svg"))
-                    .expect("Failed to read OpenedCell from cache")
-            }
-            Err(e) => panic!("Failed to read OpenedCell from cache: {e:?}"),
-        }
-    });
-    pub(crate) static UNOPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
-        let cache_result = get_data_from_cache(std::path::Path::new("classic/UnopenedCell.svg"));
-        match cache_result {
-            Ok(data) => data,
-            Err(CacheError::NotFound) => {
-                if let Err(e) = create_cache() {
-                    panic!("Failed to create cache: {e:?}");
-                }
-                get_data_from_cache(std::path::Path::new("classic/UnopenedCell.svg"))
-                    .expect("Failed to read UnopenedCell from cache")
-            }
-            Err(e) => panic!("Failed to read UnopenedCell from cache: {e:?}"),
-        }
-    });
-    pub(crate) static MINE: LazyLock<Vec<u8>> = LazyLock::new(|| {
-        let cache_result = get_data_from_cache(std::path::Path::new("classic/Mine.svg"));
-        match cache_result {
-            Ok(data) => data,
-            Err(CacheError::NotFound) => {
-                if let Err(e) = create_cache() {
-                    panic!("Failed to create cache: {e:?}");
-                }
-                get_data_from_cache(std::path::Path::new("classic/Mine.svg"))
-                    .expect("Failed to read Mine from cache")
-            }
-            Err(e) => panic!("Failed to read Mine from cache: {e:?}"),
-        }
-    });
-    pub(crate) static FLAG: LazyLock<Vec<u8>> = LazyLock::new(|| {
-        let cache_result = get_data_from_cache(std::path::Path::new("classic/Flag.svg"));
-        match cache_result {
-            Ok(data) => data,
-            Err(CacheError::NotFound) => {
-                if let Err(e) = create_cache() {
-                    panic!("Failed to create cache: {e:?}");
-                }
-                get_data_from_cache(std::path::Path::new("classic/Flag.svg"))
-                    .expect("Failed to read Flag from cache")
-            }
-            Err(e) => panic!("Failed to read Flag from cache: {e:?}"),
-        }
-    });
-}
+create_assets!(
+    [simple_light, "svg"],
+    [simple_dark, "svg"],
+    [classic, "svg", cfg(feature = "non-free")]
+);

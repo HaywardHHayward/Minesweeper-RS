@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-        width="13"
-        height="13"
-        viewBox="0 0 13 13"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
         version="1.1"
         id="svg1"
         xml:space="preserve"
@@ -14,10 +14,21 @@
     <g
             id="layer7"
             style="display:inline"
-            transform="translate(-101,-197)"><path
-       d="m 107.5,197 -0.5,1.5 a 5,5 0 0 0 -2.7,1.1 l -1.4,-0.7 0.7,1.4 a 5,5 0 0 0 -1.1,2.7 l -1.5,0.5 1.5,0.5 a 5,5 0 0 0 1.1,2.7 l -0.7,1.4 1.4,-0.7 a 5,5 0 0 0 2.7,1.1 l 0.5,1.5 0.5,-1.5 a 5,5 0 0 0 2.7,-1.1 l 1.4,0.7 -0.7,-1.4 a 5,5 0 0 0 1.1,-2.7 l 1.5,-0.5 -1.5,-0.5 a 5,5 0 0 0 -1.1,-2.7 l 0.7,-1.4 -1.4,0.7 a 5,5 0 0 0 -2.7,-1.1 z"
-       style="display:inline"
-       id="path71" />
+            transform="translate(-99,-195)"><path
+       style="display:inline;fill:#808080;fill-opacity:1"
+       d="m 100,211 v -15 h 15 v -1 H 99 v 16 z"
+       id="path32-5" />
+        <rect
+                style="display:inline;fill:#c0c0c0;fill-opacity:1"
+                id="rect32-7"
+                width="15"
+                height="15"
+                x="100"
+                y="196"/>
+        <path
+                d="m 107.5,197 -0.5,1.5 a 5,5 0 0 0 -2.7,1.1 l -1.4,-0.7 0.7,1.4 a 5,5 0 0 0 -1.1,2.7 l -1.5,0.5 1.5,0.5 a 5,5 0 0 0 1.1,2.7 l -0.7,1.4 1.4,-0.7 a 5,5 0 0 0 2.7,1.1 l 0.5,1.5 0.5,-1.5 a 5,5 0 0 0 2.7,-1.1 l 1.4,0.7 -0.7,-1.4 a 5,5 0 0 0 1.1,-2.7 l 1.5,-0.5 -1.5,-0.5 a 5,5 0 0 0 -1.1,-2.7 l 0.7,-1.4 -1.4,0.7 a 5,5 0 0 0 -2.7,-1.1 z"
+                style="display:inline"
+                id="path71"/>
         <circle
                 style="display:inline;fill:#ffffff;fill-opacity:1"
                 id="path51"

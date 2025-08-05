@@ -155,7 +155,9 @@ impl_game_image!(
     [UNOPENED_CELL, unopened_cell],
     [OPENED_CELL, opened_cell],
     [MINE, mine],
-    [FLAG, flag]
+    [FLAG, flag],
+    [INCORRECT_FLAG, incorrect_flag],
+    [EXPLODED_MINE, exploded_mine]
 );
 
 impl Game {
@@ -182,83 +184,74 @@ impl Game {
         ];
         content.width((self.board.get_width() as usize * 16) as f32)
     }
-    fn cell_view(&self, cell: &Cell) -> impl Into<Element<'_, Action>> {
+    fn cell_view(&self, cell: &Cell) -> Element<'_, Action> {
         #[inline]
         fn cell_container<'a>(element: impl Into<Element<'a, Action>>) -> Element<'a, Action> {
             GuiWidget::center(element).width(16).height(16).into()
         }
-        let mut stack = GuiWidget::Stack::with_capacity(2).height(16).width(16);
-        if cell.is_open() {
-            let open_image = self.opened_cell();
-            stack = stack.push(open_image);
+        cell_container(if cell.is_open() {
             if cell.is_mine() {
-                // Replace mine image with specifically the hit mine image
-                let mine_image = cell_container(self.mine());
-                stack = stack.push(mine_image);
-            } else if let Some(adjacent_mines) = cell.adjacent_mines()
-                && adjacent_mines > 0
-            {
-                let color = match adjacent_mines {
-                    1 => iced::color!(0, 0, 255),
-                    2 => iced::color!(0, 127, 0),
-                    3 => iced::color!(255, 0, 0),
-                    4 => iced::color!(0, 0, 127),
-                    5 => iced::color!(127, 0, 0),
-                    6 => iced::color!(0, 127, 127),
-                    7 => iced::color!(255, 255, 255),
-                    8 => iced::color!(127, 127, 127),
-                    // SAFETY: The internal enum AdjacentMines (which is what cell.adjacent_mines
-                    // converts from) CANNOT represent values outside 0-8, and we
-                    // just checked that adjacent_mines is not 0, so all other values are
-                    // unreachable.
-                    _ => unsafe { std::hint::unreachable_unchecked() },
-                };
-                let text = GuiWidget::text!("{adjacent_mines}")
-                    .font(Font::MONOSPACE)
-                    .size(14)
-                    .color(color);
-                stack = stack.push(cell_container(text));
+                self.exploded_mine()
+            } else {
+                let mut stack = GuiWidget::Stack::with_capacity(2);
+                let open_image = self.opened_cell();
+                stack = stack.push(open_image);
+                if let Some(adjacent_mines) = cell.adjacent_mines()
+                    && adjacent_mines > 0
+                {
+                    let color = match adjacent_mines {
+                        1 => iced::color!(0, 0, 255),
+                        2 => iced::color!(0, 127, 0),
+                        3 => iced::color!(255, 0, 0),
+                        4 => iced::color!(0, 0, 127),
+                        5 => iced::color!(127, 0, 0),
+                        6 => iced::color!(0, 127, 127),
+                        7 => iced::color!(255, 255, 255),
+                        8 => iced::color!(127, 127, 127),
+                        // SAFETY: The internal enum AdjacentMines (which is what
+                        // cell.adjacent_mines converts from) CANNOT
+                        // represent values outside 0-8, and we just checked
+                        // that adjacent_mines is not 0, so all other values are
+                        // unreachable.
+                        _ => unsafe { std::hint::unreachable_unchecked() },
+                    };
+                    let text = GuiWidget::text!("{adjacent_mines}")
+                        .font(Font::MONOSPACE)
+                        .size(14)
+                        .color(color);
+                    stack = stack.push(cell_container(text));
+                }
+                stack.into()
             }
         } else {
             match self.board.get_state() {
                 BoardState::InProgress => {
-                    let unopened_image = self.unopened_cell();
-                    stack = stack.push(unopened_image);
                     if cell.is_flagged() {
-                        let flag_image = cell_container(self.flag());
-                        stack = stack.push(flag_image);
+                        self.flag()
+                    } else {
+                        self.unopened_cell()
                     }
                 }
                 BoardState::Won => {
-                    let unopened_image = self.unopened_cell();
-                    stack = stack.push(unopened_image);
                     if cell.is_mine() || cell.is_flagged() {
-                        let flag_image = cell_container(self.flag());
-                        stack = stack.push(flag_image);
+                        self.flag()
+                    } else {
+                        self.unopened_cell()
                     }
                 }
                 BoardState::Lost => {
                     if cell.is_mine() && !cell.is_flagged() {
-                        let opened_image = self.opened_cell();
-                        let mine_image = cell_container(self.mine());
-                        stack = stack.extend([opened_image, mine_image]);
+                        self.mine()
                     } else if !cell.is_mine() && cell.is_flagged() {
-                        let opened_image = self.opened_cell();
-                        // TODO: Add wrong flag image, for now it will simple be the flag itself
-                        let flag_image = cell_container(self.flag());
-                        stack = stack.extend([opened_image, flag_image]);
+                        self.incorrect_flag()
+                    } else if cell.is_flagged() {
+                        self.flag()
                     } else {
-                        let unopened_image = self.unopened_cell();
-                        stack = stack.push(unopened_image);
-                        if cell.is_flagged() {
-                            let flag_image = cell_container(self.flag());
-                            stack = stack.push(flag_image);
-                        }
+                        self.unopened_cell()
                     }
                 }
             }
-        }
-        stack.width(16).height(16)
+        })
     }
     fn cell(&self, x: u8, y: u8) -> Element<'_, Action> {
         let cell = self.board.get_cell(x, y).expect("Cell should exist");
@@ -271,7 +264,7 @@ impl Game {
                 .on_middle_press(Action::ChordCell(x, y))
                 .into()
         } else {
-            cell_view.into()
+            cell_view
         }
     }
 }

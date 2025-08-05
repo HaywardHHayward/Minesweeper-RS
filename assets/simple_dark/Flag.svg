@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
-  <defs>
-    <style>
-      .cls-1 {
-        fill: none;
-      }
+    <defs>
+        <style>
+            .cls-1 {
+            fill: #c00;
+            }
 
-      .cls-2 {
-        fill: #c00;
-      }
-    </style>
-  </defs>
-  <g id="Flag">
-    <rect class="cls-1" width="16" height="16"/>
-    <g>
-      <rect x="8.25" y="3" width="1" height="10"/>
-      <polygon class="cls-2" points="8.25 3 3.75 5.5 8.25 8.03 8.25 3"/>
+            .cls-2 {
+            fill: #616161;
+            }
+        </style>
+    </defs>
+    <g id="Flag">
+        <rect class="cls-2" width="16" height="16" rx="2" ry="2"/>
+        <g>
+            <rect x="8.25" y="3" width="1" height="10"/>
+            <polygon class="cls-1" points="8.25 3 3.75 5.5 8.25 8.03 8.25 3"/>
+        </g>
     </g>
-  </g>
 </svg>
