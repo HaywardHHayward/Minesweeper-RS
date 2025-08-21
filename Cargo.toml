@@ -20,16 +20,16 @@ benching = []
 non-free = []
 
 [dependencies]
-rand = "0.9.0"
+rand = "0.9"
 iced = { version = "0.14.0-dev", git = "https://github.com/iced-rs/iced.git", features = ["image", "tokio", "svg"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_yml = "0.0.12"
-directories = "6.0.0"
-zip = "4.3"
-tinyvec = "1.9.0"
+directories = "6.0"
+zip = "4.4"
+tinyvec = "1.10"
 
 [build-dependencies]
-zip = "4.3"
+zip = "4.4"
 walkdir = "2.5"
 
 [dev-dependencies]
