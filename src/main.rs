@@ -1,7 +1,7 @@
 use minesweeper_rs::*;
 
 pub fn main() -> iced::Result {
-    iced::application(Application::default, update, view)
+    iced::application(Application::create, update, view)
         .settings(iced::Settings::default())
         .subscription(subscription)
         .theme(theme)
