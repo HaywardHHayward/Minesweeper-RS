@@ -1,18 +1,18 @@
 ﻿use std::{fmt::Display, fs::File, path::Path};
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, Copy)]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub(crate) struct Config {
     theme: Theme,
     scale_factor: f64,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, Copy)]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
 struct Theme {
     game_theme: GameTheme,
     menu_theme: MenuTheme,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, Copy, PartialEq)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq)]
 pub(crate) enum GameTheme {
     SimpleLight,
     SimpleDark,
@@ -20,7 +20,7 @@ pub(crate) enum GameTheme {
     Classic,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, Copy, PartialEq)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq)]
 pub(crate) enum MenuTheme {
     Light,
     Dark,

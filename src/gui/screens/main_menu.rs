@@ -8,4 +8,10 @@ pub struct MainMenu {
     config: RcCell<Config>,
 }
 
+impl MainMenu {
+    pub fn build(config: RcCell<Config>) -> Self {
+        Self { config }
+    }
+}
+
 impl Screen for MainMenu {}

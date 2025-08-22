@@ -1,11 +1,10 @@
-use std::collections::HashMap;
-
 use iced::{Element, Subscription, Task};
 use screens::Message;
 
 pub(crate) mod assets;
 pub(crate) mod config;
 pub(crate) mod screens;
+pub(crate) mod theme;
 
 pub fn update(state: &mut Application, message: Message) -> Task<Message> {
     state.update(message).unwrap_or(Task::none())
@@ -29,6 +28,7 @@ pub fn scale_factor(state: &Application) -> f64 {
 
 pub trait Screen: std::fmt::Debug {
     fn update(&mut self, message: Message) -> Option<Task<Message>> {
+        let _ = message;
         None
     }
     fn view(&self) -> Element<'_, Message> {
@@ -43,12 +43,14 @@ pub(crate) type RcCell<T> = std::rc::Rc<std::cell::RefCell<T>>;
 
 pub enum AppMessage {
     ChangeScreen(Box<dyn FnOnce() -> Box<dyn Screen> + Send + Sync>),
+    CloseApp,
 }
 
 impl std::fmt::Debug for AppMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             AppMessage::ChangeScreen(_) => write!(f, "ChangeScreen"),
+            AppMessage::CloseApp => write!(f, "CloseApp"),
         }
     }
 }
@@ -110,6 +112,10 @@ impl Application {
             config.save(&config_path);
             config
         };
-        todo!()
+        let config = std::rc::Rc::new(std::cell::RefCell::new(config));
+        Application {
+            screen: Box::new(screens::main_menu::MainMenu::build(config.clone())),
+            config,
+        }
     }
 }
