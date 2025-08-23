@@ -1,10 +1,14 @@
+use std::{
+    ops::Deref,
+    sync::{Arc, RwLock},
+};
+
 use iced::{Element, Subscription, Task};
 use screens::Message;
 
 pub(crate) mod assets;
 pub(crate) mod config;
 pub(crate) mod screens;
-pub(crate) mod theme;
 
 pub fn update(state: &mut Application, message: Message) -> Task<Message> {
     state.update(message).unwrap_or(Task::none())
@@ -23,7 +27,7 @@ pub fn theme(state: &Application) -> iced::Theme {
 }
 
 pub fn scale_factor(state: &Application) -> f64 {
-    state.config.borrow().get_scale_factor()
+    state.config.read().unwrap().scale_factor
 }
 
 pub trait Screen: std::fmt::Debug {
@@ -39,10 +43,13 @@ pub trait Screen: std::fmt::Debug {
     }
 }
 
-pub(crate) type RcCell<T> = std::rc::Rc<std::cell::RefCell<T>>;
+pub(crate) type ArcLock<T> = Arc<RwLock<T>>;
 
+pub type ScreenBuilder = Arc<dyn Fn() -> Box<dyn Screen> + Send + Sync>;
+
+#[derive(Clone)]
 pub enum AppMessage {
-    ChangeScreen(Box<dyn FnOnce() -> Box<dyn Screen> + Send + Sync>),
+    ChangeScreen(ScreenBuilder),
     CloseApp,
 }
 
@@ -58,18 +65,38 @@ impl std::fmt::Debug for AppMessage {
 #[derive(Debug)]
 pub struct Application {
     screen: Box<dyn Screen>,
-    config: RcCell<config::Config>,
+    config: ArcLock<config::Config>,
 }
 
 impl Screen for Application {
     fn update(&mut self, message: Message) -> Option<Task<Message>> {
-        self.screen.update(message)
+        let Message::App(message) = message else {
+            return self.screen.update(message);
+        };
+        match message {
+            AppMessage::ChangeScreen(builder) => {
+                self.screen = builder();
+                None
+            }
+            AppMessage::CloseApp => {
+                self.clear_cache().unwrap_or_else(|e| {
+                    eprintln!("Failed to clear cache: {e}");
+                });
+                Some(iced::exit())
+            }
+        }
     }
     fn view(&self) -> Element<'_, Message> {
         self.screen.view()
     }
     fn subscription(&self) -> Option<Subscription<Message>> {
-        self.screen.subscription()
+        let close_subscription =
+            iced::window::close_requests().map(|_| Message::App(AppMessage::CloseApp));
+        if let Some(sub_subscription) = self.screen.subscription() {
+            Some(Subscription::batch([close_subscription, sub_subscription]))
+        } else {
+            Some(close_subscription)
+        }
     }
 }
 
@@ -79,7 +106,7 @@ impl Application {
             .expect("Failed to get project directories")
     }
     pub(crate) fn theme(&self) -> iced::Theme {
-        match self.config.borrow().get_menu_theme() {
+        match &self.config.read().unwrap().theme.menu_theme {
             config::MenuTheme::Light => iced::Theme::Light,
             config::MenuTheme::Dark => iced::Theme::Dark,
         }
@@ -112,7 +139,7 @@ impl Application {
             config.save(&config_path);
             config
         };
-        let config = std::rc::Rc::new(std::cell::RefCell::new(config));
+        let config = Arc::new(RwLock::new(config));
         Application {
             screen: Box::new(screens::main_menu::MainMenu::build(config.clone())),
             config,
