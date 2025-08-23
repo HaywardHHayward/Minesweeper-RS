@@ -1,8 +1,14 @@
-﻿use super::Message as SuperMessage;
+﻿use std::sync::Arc;
+
+use iced::{Task, widget as GuiWidget};
+
+use super::Message as SuperMessage;
 use crate::{ArcLock, Config, Screen};
 
 #[derive(Debug, Clone)]
-pub enum Message {}
+pub enum Message {
+    Back,
+}
 
 #[derive(Debug)]
 pub struct GameSelection {
@@ -15,4 +21,28 @@ impl GameSelection {
     }
 }
 
-impl Screen for GameSelection {}
+impl Screen for GameSelection {
+    fn update(&mut self, message: SuperMessage) -> Option<Task<SuperMessage>> {
+        let SuperMessage::GameSelection(message) = message else {
+            return None;
+        };
+        let config = self.config.clone();
+        match message {
+            Message::Back => Some(Task::done(SuperMessage::App(
+                super::AppMessage::ChangeScreen(Arc::new(move || {
+                    Box::new(super::MainMenu::build(config.clone()))
+                })),
+            ))),
+        }
+    }
+    fn view(&self) -> iced::Element<'_, SuperMessage> {
+        let todo_message = GuiWidget::text("Game selection screen is under construction!");
+        let back_button = GuiWidget::button("Back")
+            .on_press(SuperMessage::GameSelection(Message::Back))
+            .style(GuiWidget::button::secondary);
+        let content = GuiWidget::column![todo_message, back_button]
+            .align_x(iced::Center)
+            .spacing(20);
+        GuiWidget::center(content).into()
+    }
+}

@@ -1,4 +1,8 @@
-﻿use super::Message as SuperMessage;
+﻿use std::sync::Arc;
+
+use iced::{Element, Task, widget as GuiWidget};
+
+use super::Message as SuperMessage;
 use crate::{ArcLock, Config, Screen};
 
 #[derive(Debug, Clone)]
@@ -17,4 +21,28 @@ impl SettingsScreen {
     }
 }
 
-impl Screen for SettingsScreen {}
+impl Screen for SettingsScreen {
+    fn update(&mut self, message: SuperMessage) -> Option<Task<SuperMessage>> {
+        let SuperMessage::SettingsScreen(message) = message else {
+            return None;
+        };
+        let config = self.config.clone();
+        match message {
+            Message::Back => Some(Task::done(SuperMessage::App(
+                super::AppMessage::ChangeScreen(Arc::new(move || {
+                    Box::new(super::MainMenu::build(config.clone()))
+                })),
+            ))),
+        }
+    }
+    fn view(&self) -> Element<'_, SuperMessage> {
+        let todo_message = GuiWidget::text("Settings screen is under construction!");
+        let back_button = GuiWidget::button("Back")
+            .on_press(SuperMessage::SettingsScreen(Message::Back))
+            .style(GuiWidget::button::secondary);
+        let content = GuiWidget::column![todo_message, back_button]
+            .align_x(iced::Center)
+            .spacing(20);
+        GuiWidget::center(content).into()
+    }
+}

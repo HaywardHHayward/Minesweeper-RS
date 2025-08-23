@@ -50,12 +50,22 @@ impl Screen for MainMenu {
         let author_text = GuiWidget::text("by Hayward H. Hayward").size(20);
         let main_title = GuiWidget::column![title_text, author_text].align_x(iced::Center);
 
-        let play_button =
-            GuiWidget::button("Play").on_press(SuperMessage::MainMenu(Message::ToGameSelection));
-        let settings_button = GuiWidget::button("Settings");
-        let about_button = GuiWidget::button("About");
-        let quit_button = GuiWidget::button("Quit");
-        let buttons = GuiWidget::column![play_button, settings_button, about_button, quit_button];
+        let play_button = GuiWidget::button("Play")
+            .on_press(SuperMessage::MainMenu(Message::ToGameSelection))
+            .style(GuiWidget::button::primary);
+        let settings_button = GuiWidget::button("Settings")
+            .on_press(SuperMessage::MainMenu(Message::ToSettings))
+            .style(GuiWidget::button::secondary);
+        let about_button = GuiWidget::button("About")
+            .on_press(SuperMessage::MainMenu(Message::ToAbout))
+            .style(GuiWidget::button::secondary);
+        let quit_button = GuiWidget::button("Quit")
+            .on_press(SuperMessage::MainMenu(Message::Quit))
+            .style(GuiWidget::button::danger);
+        let buttons = GuiWidget::column![play_button, settings_button, about_button, quit_button]
+            .width(iced::Shrink)
+            .spacing(5)
+            .align_x(iced::Center);
 
         let main_menu = GuiWidget::column![main_title, buttons]
             .spacing(30)
