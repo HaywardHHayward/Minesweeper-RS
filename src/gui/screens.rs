@@ -1,4 +1,4 @@
-﻿pub use self::{
+pub use self::{
     about::About, game::Game, game_selection::GameSelection, main_menu::MainMenu,
     settings_screen::SettingsScreen,
 };

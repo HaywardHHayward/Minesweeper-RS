@@ -1,4 +1,4 @@
-﻿#[cfg(not(feature = "non-free"))]
+#[cfg(not(feature = "non-free"))]
 const NON_FREE_DIRS: [&str; 1] = ["classic"];
 
 fn exclude_files(entry: &walkdir::DirEntry) -> bool {
