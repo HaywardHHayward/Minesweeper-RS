@@ -77,6 +77,9 @@ impl Screen for Application {
                 self.clear_cache().unwrap_or_else(|e| {
                     eprintln!("Failed to clear cache: {e}");
                 });
+                let config = self.config.read().unwrap();
+                let config_path = Application::app_dirs().config_dir().join("config.yaml");
+                config.save(&config_path);
                 Some(iced::exit())
             }
         }

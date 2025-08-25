@@ -1,4 +1,4 @@
-﻿use std::{fmt::Display, fs::File, path::Path};
+use std::{fmt::Display, fs::File, path::Path};
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct Config {
@@ -12,7 +12,7 @@ pub struct Theme {
     pub menu_theme: MenuTheme,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 pub enum GameTheme {
     SimpleLight,
     SimpleDark,
@@ -20,10 +20,23 @@ pub enum GameTheme {
     Classic,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq)]
+impl GameTheme {
+    pub const ALL: &'static [GameTheme] = &[
+        GameTheme::SimpleLight,
+        GameTheme::SimpleDark,
+        #[cfg(feature = "non-free")]
+        GameTheme::Classic,
+    ];
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
 pub enum MenuTheme {
     Light,
     Dark,
+}
+
+impl MenuTheme {
+    pub const ALL: &'static [MenuTheme] = &[MenuTheme::Light, MenuTheme::Dark];
 }
 
 impl Display for GameTheme {
