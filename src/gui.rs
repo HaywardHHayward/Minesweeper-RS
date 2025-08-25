@@ -3,9 +3,9 @@ use std::sync::{Arc, RwLock};
 use iced::{Element, Subscription, Task};
 use screens::Message;
 
-pub(crate) mod assets;
-pub(crate) mod config;
-pub(crate) mod screens;
+pub mod assets;
+pub mod config;
+pub mod screens;
 
 pub fn update(state: &mut Application, message: Message) -> Task<Message> {
     state.update(message).unwrap_or(Task::none())
@@ -40,7 +40,7 @@ pub trait Screen: std::fmt::Debug + Send + Sync {
     }
 }
 
-pub(crate) type ArcLock<T> = Arc<RwLock<T>>;
+pub type ArcLock<T> = Arc<RwLock<T>>;
 
 #[derive(Clone)]
 pub enum AppMessage {
@@ -96,17 +96,17 @@ impl Screen for Application {
 }
 
 impl Application {
-    pub(crate) fn app_dirs() -> directories::ProjectDirs {
+    pub fn app_dirs() -> directories::ProjectDirs {
         directories::ProjectDirs::from("", "HaywardHHayward", "Minesweeper")
             .expect("Failed to get project directories")
     }
-    pub(crate) fn theme(&self) -> iced::Theme {
+    pub fn theme(&self) -> iced::Theme {
         match &self.config.read().unwrap().theme.menu_theme {
             config::MenuTheme::Light => iced::Theme::Light,
             config::MenuTheme::Dark => iced::Theme::Dark,
         }
     }
-    pub(crate) fn clear_cache(&mut self) -> Result<(), std::io::Error> {
+    pub fn clear_cache(&mut self) -> Result<(), std::io::Error> {
         let cache_dir = Self::app_dirs().cache_dir().to_path_buf();
         if cache_dir.exists() {
             std::fs::remove_dir_all(&cache_dir)?;

@@ -1,19 +1,19 @@
 ﻿use std::{fmt::Display, fs::File, path::Path};
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
-pub(crate) struct Config {
+pub struct Config {
     pub theme: Theme,
     pub scale_factor: f64,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
-pub(crate) struct Theme {
+pub struct Theme {
     pub game_theme: GameTheme,
     pub menu_theme: MenuTheme,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq)]
-pub(crate) enum GameTheme {
+pub enum GameTheme {
     SimpleLight,
     SimpleDark,
     #[cfg(feature = "non-free")]
@@ -21,7 +21,7 @@ pub(crate) enum GameTheme {
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq)]
-pub(crate) enum MenuTheme {
+pub enum MenuTheme {
     Light,
     Dark,
 }
@@ -59,12 +59,12 @@ impl Default for Config {
 }
 
 impl Config {
-    pub(crate) fn save(&self, save_location: &Path) {
+    pub fn save(&self, save_location: &Path) {
         let save_file = File::create(save_location).expect("Failed to create config file");
         serde_yml::to_writer(save_file, &self).expect("Failed to serialize config");
     }
 
-    pub(crate) fn load(load_location: &Path) -> Result<Self, serde_yml::Error> {
+    pub fn load(load_location: &Path) -> Result<Self, serde_yml::Error> {
         let config_file = File::open(load_location).expect("Failed to open config file");
         let config = serde_yml::from_reader(config_file)?;
         Ok(config)
