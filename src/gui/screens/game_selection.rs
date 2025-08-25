@@ -2,11 +2,15 @@
 
 use iced::{Task, widget as GuiWidget};
 
-use super::{AppMessage, MainMenu, Message as SuperMessage};
-use crate::{ArcLock, Config, Screen};
+use super::{AppMessage, CustomSetup, Game, MainMenu, Message as SuperMessage};
+use crate::{ArcLock, Board, Config, Screen};
 
 #[derive(Debug, Clone)]
 pub enum Message {
+    BeginnerSelected,
+    IntermediateSelected,
+    ExpertSelected,
+    CustomSelected,
     Back,
 }
 
@@ -28,6 +32,22 @@ impl Screen for GameSelection {
         };
         let config = self.config.clone();
         match message {
+            Message::BeginnerSelected => Some(Task::perform(
+                async { Game::build(config, Board::create_beginner()) },
+                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
+            )),
+            Message::IntermediateSelected => Some(Task::perform(
+                async { Game::build(config, Board::create_intermediate()) },
+                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
+            )),
+            Message::ExpertSelected => Some(Task::perform(
+                async { Game::build(config, Board::create_expert()) },
+                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
+            )),
+            Message::CustomSelected => Some(Task::perform(
+                async { CustomSetup::build(config) },
+                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
+            )),
             Message::Back => Some(Task::perform(
                 async { MainMenu::build(config) },
                 move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
@@ -35,11 +55,32 @@ impl Screen for GameSelection {
         }
     }
     fn view(&self) -> iced::Element<'_, SuperMessage> {
-        let todo_message = GuiWidget::text("Game selection screen is under construction!");
+        let beginner_button = GuiWidget::button("Beginner (9x9, 10 mines)")
+            .on_press(SuperMessage::GameSelection(Message::BeginnerSelected))
+            .style(GuiWidget::button::primary);
+        let intermediate_button = GuiWidget::button("Intermediate (16x16, 40 mines)")
+            .on_press(SuperMessage::GameSelection(Message::IntermediateSelected))
+            .style(GuiWidget::button::primary);
+        let expert_button = GuiWidget::button("Expert (16x30, 99 mines)")
+            .on_press(SuperMessage::GameSelection(Message::ExpertSelected))
+            .style(GuiWidget::button::primary);
+        let custom_button = GuiWidget::button("Custom")
+            .on_press(SuperMessage::GameSelection(Message::CustomSelected))
+            .style(GuiWidget::button::primary);
+
+        let buttons = GuiWidget::column![
+            beginner_button,
+            intermediate_button,
+            expert_button,
+            custom_button
+        ]
+        .spacing(10)
+        .align_x(iced::Center);
+
         let back_button = GuiWidget::button("Back")
             .on_press(SuperMessage::GameSelection(Message::Back))
             .style(GuiWidget::button::secondary);
-        let content = GuiWidget::column![todo_message, back_button]
+        let content = GuiWidget::column![buttons, back_button]
             .align_x(iced::Center)
             .spacing(20);
         GuiWidget::center(content).into()
