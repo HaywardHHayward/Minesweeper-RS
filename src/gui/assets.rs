@@ -1,14 +1,18 @@
 use std::io::Read;
 
+use thiserror::Error;
 use zip::{ZipArchive, result};
 
 static ASSET_DATA: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/assets.zip"));
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 enum CacheError {
+    #[error("Asset not found in cache")]
     NotFound,
-    IoError(std::io::Error),
-    ZipError(result::ZipError),
+    #[error("I/O error: {0}")]
+    IoError(#[from] std::io::Error),
+    #[error("Zip error: {0}")]
+    ZipError(#[from] result::ZipError),
 }
 fn get_data_from_cache(path: &std::path::Path) -> Result<Vec<u8>, CacheError> {
     let cached_asset_file = crate::Application::app_dirs()

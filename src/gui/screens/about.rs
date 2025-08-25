@@ -92,6 +92,12 @@ impl Screen for About {
             span(" crate, by Lokathor")
         ]
         .on_link_click(iced::never);
+        let thiserror = GuiWidget::rich_text![
+            span("The "),
+            span("thiserror").font(bold_font),
+            span(" crate, by David Tolnay")
+        ]
+        .on_link_click(iced::never);
 
         let library_text = GuiWidget::column![
             rand,
@@ -101,7 +107,8 @@ impl Screen for About {
             directories,
             zip,
             walkdir,
-            tinyvec
+            tinyvec,
+            thiserror
         ];
 
         let about_text = GuiWidget::column![intro_message, library_text]
