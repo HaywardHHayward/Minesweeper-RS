@@ -1,8 +1,8 @@
-﻿use std::{ops::Deref, sync::Arc};
+﻿use std::sync::Arc;
 
 use iced::{Element, Task, widget as GuiWidget};
 
-use super::{AppMessage, Message as SuperMessage};
+use super::{About, AppMessage, GameSelection, Message as SuperMessage, SettingsScreen};
 use crate::{ArcLock, Config, Screen};
 
 #[derive(Debug, Clone)]
@@ -31,17 +31,17 @@ impl Screen for MainMenu {
         };
         let config = self.config.clone();
         match message {
-            Message::ToGameSelection => {
-                Some(Task::done(SuperMessage::App(AppMessage::ChangeScreen(
-                    Arc::new(move || Box::new(super::GameSelection::build(config.clone()))),
-                ))))
-            }
-            Message::ToSettings => Some(Task::done(SuperMessage::App(AppMessage::ChangeScreen(
-                Arc::new(move || Box::new(super::SettingsScreen::build(config.clone()))),
-            )))),
-            Message::ToAbout => Some(Task::done(SuperMessage::App(AppMessage::ChangeScreen(
-                Arc::new(move || Box::new(super::About::build(config.clone()))),
-            )))),
+            Message::ToGameSelection => Some(Task::perform(
+                async { GameSelection::build(config) },
+                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
+            )),
+            Message::ToSettings => Some(Task::perform(
+                async { SettingsScreen::build(config) },
+                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
+            )),
+            Message::ToAbout => Some(Task::perform(async { About::build(config) }, move |item| {
+                SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item))))
+            })),
             Message::Quit => Some(Task::done(SuperMessage::App(AppMessage::CloseApp))),
         }
     }

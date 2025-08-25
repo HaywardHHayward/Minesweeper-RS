@@ -1,7 +1,4 @@
-use std::{
-    ops::Deref,
-    sync::{Arc, RwLock},
-};
+use std::sync::{Arc, RwLock};
 
 use iced::{Element, Subscription, Task};
 use screens::Message;
@@ -30,7 +27,7 @@ pub fn scale_factor(state: &Application) -> f64 {
     state.config.read().unwrap().scale_factor
 }
 
-pub trait Screen: std::fmt::Debug {
+pub trait Screen: std::fmt::Debug + Send + Sync {
     fn update(&mut self, message: Message) -> Option<Task<Message>> {
         let _ = message;
         None
@@ -45,11 +42,9 @@ pub trait Screen: std::fmt::Debug {
 
 pub(crate) type ArcLock<T> = Arc<RwLock<T>>;
 
-pub type ScreenBuilder = Arc<dyn Fn() -> Box<dyn Screen> + Send + Sync>;
-
 #[derive(Clone)]
 pub enum AppMessage {
-    ChangeScreen(ScreenBuilder),
+    ChangeScreen(Arc<Box<dyn Screen>>),
     CloseApp,
 }
 
@@ -75,7 +70,7 @@ impl Screen for Application {
         };
         match message {
             AppMessage::ChangeScreen(builder) => {
-                self.screen = builder();
+                self.screen = Arc::into_inner(builder).unwrap();
                 None
             }
             AppMessage::CloseApp => {

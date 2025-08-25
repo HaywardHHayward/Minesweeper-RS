@@ -28,9 +28,10 @@ impl Screen for About {
         };
         let config = self.config.clone();
         match message {
-            Message::Back => Some(Task::done(SuperMessage::App(AppMessage::ChangeScreen(
-                Arc::new(move || Box::new(MainMenu::build(config.clone()))),
-            )))),
+            Message::Back => Some(Task::perform(
+                async { MainMenu::build(config) },
+                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
+            )),
         }
     }
     fn view(&self) -> Element<'_, SuperMessage> {

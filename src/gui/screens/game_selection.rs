@@ -2,7 +2,7 @@
 
 use iced::{Task, widget as GuiWidget};
 
-use super::Message as SuperMessage;
+use super::{AppMessage, MainMenu, Message as SuperMessage};
 use crate::{ArcLock, Config, Screen};
 
 #[derive(Debug, Clone)]
@@ -28,11 +28,10 @@ impl Screen for GameSelection {
         };
         let config = self.config.clone();
         match message {
-            Message::Back => Some(Task::done(SuperMessage::App(
-                super::AppMessage::ChangeScreen(Arc::new(move || {
-                    Box::new(super::MainMenu::build(config.clone()))
-                })),
-            ))),
+            Message::Back => Some(Task::perform(
+                async { MainMenu::build(config) },
+                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
+            )),
         }
     }
     fn view(&self) -> iced::Element<'_, SuperMessage> {
