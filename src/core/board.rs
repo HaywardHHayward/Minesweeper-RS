@@ -29,7 +29,8 @@ pub struct Board {
 #[derive(Debug)]
 pub enum BoardError {
     InvalidBoardSize,
-    TooManyMines(NonZeroU16), // The number of mines equals to or exceeds the board area
+    TooManyMines { max_mines: NonZeroU16 }, /* The number of mines equals to or exceeds the
+                                             * board area */
 }
 
 impl Board {
@@ -47,9 +48,9 @@ impl Board {
         if mine_count.get() >= board_area {
             // The number of mines is equal to the board area (which is not a game) or
             // exceeds it (which is impossible to construct)
-            return Err(BoardError::TooManyMines(
-                NonZeroU16::new(board_area - 1).unwrap(),
-            ));
+            return Err(BoardError::TooManyMines {
+                max_mines: NonZeroU16::new(board_area - 1).unwrap(),
+            });
         }
         let cells = vec![Cell::new(); board_area as usize];
         let unopened_coordinates = (0..width.get())
