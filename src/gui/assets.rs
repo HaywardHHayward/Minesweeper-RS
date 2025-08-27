@@ -47,6 +47,8 @@ fn create_cache() -> Result<(), CacheError> {
     Ok(())
 }
 
+pub static ICON: &[u8] = include_bytes!("../../assets/Icon.qoi");
+
 macro_rules! create_assets {
     ($([$name:ident, $extension:literal$(, $attr:meta)?]),*) => {
         $(
