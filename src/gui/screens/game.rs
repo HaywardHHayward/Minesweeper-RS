@@ -59,17 +59,17 @@ impl Screen for Game {
                 None
             }
             Message::ResetGame => {
-                let (rows, columns, mines) = (
-                    self.board.get_height(),
+                let (width, height, mines) = (
                     self.board.get_width(),
+                    self.board.get_height(),
                     self.board.get_mine_count(),
                 );
                 let new_board = unsafe {
                     // SAFETY: Rows, columns, and mines are guaranteed to be non-zero since they
                     // were used to create the current board.
                     Board::create_custom(
-                        NonZeroU8::new_unchecked(rows),
-                        NonZeroU8::new_unchecked(columns),
+                        NonZeroU8::new_unchecked(width),
+                        NonZeroU8::new_unchecked(height),
                         NonZeroU16::new_unchecked(mines),
                     )
                     .unwrap()
