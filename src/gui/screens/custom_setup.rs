@@ -10,8 +10,8 @@ use crate::{ArcLock, Board, BoardError, Config, Screen};
 #[derive(Debug)]
 pub struct CustomSetup {
     config: ArcLock<Config>,
-    row_string: String,
-    column_string: String,
+    width_string: String,
+    height_string: String,
     mines_string: String,
     error_message: Option<Box<str>>,
 }
@@ -19,8 +19,8 @@ pub struct CustomSetup {
 #[derive(Debug, Clone)]
 pub enum Message {
     Back,
-    RowChanged(String),
-    ColumnChanged(String),
+    HeightChanged(String),
+    WidthChanged(String),
     MinesChanged(String),
     Submit,
 }
@@ -29,8 +29,8 @@ impl CustomSetup {
     pub fn build(config: ArcLock<Config>) -> Self {
         Self {
             config,
-            row_string: String::new(),
-            column_string: String::new(),
+            width_string: String::new(),
+            height_string: String::new(),
             mines_string: String::new(),
             error_message: None,
         }
@@ -74,12 +74,12 @@ impl Screen for CustomSetup {
                 async { GameSelection::build(config) },
                 move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
             )),
-            Message::RowChanged(new_value) => {
-                self.row_string = validate_numerical_input::<u8>(&new_value, 2);
+            Message::WidthChanged(new_value) => {
+                self.width_string = validate_numerical_input::<u8>(&new_value, 2);
                 None
             }
-            Message::ColumnChanged(new_value) => {
-                self.column_string = validate_numerical_input::<u8>(&new_value, 2);
+            Message::HeightChanged(new_value) => {
+                self.height_string = validate_numerical_input::<u8>(&new_value, 2);
                 None
             }
             Message::MinesChanged(new_value) => {
@@ -87,9 +87,9 @@ impl Screen for CustomSetup {
                 None
             }
             Message::Submit => {
-                let (row_parsed, column_parsed, mine_parsed) = match (
-                    self.row_string.parse::<u8>(),
-                    self.column_string.parse::<u8>(),
+                let (width_parsed, height_parsed, mine_parsed) = match (
+                    self.width_string.parse::<u8>(),
+                    self.height_string.parse::<u8>(),
                     self.mines_string.parse::<u16>(),
                 ) {
                     (Ok(r), Ok(c), Ok(m)) => (r, c, m),
@@ -100,9 +100,9 @@ impl Screen for CustomSetup {
                         return None;
                     }
                 };
-                let (rows, columns, mines) = match (
-                    NonZeroU8::new(row_parsed),
-                    NonZeroU8::new(column_parsed),
+                let (width, height, mines) = match (
+                    NonZeroU8::new(width_parsed),
+                    NonZeroU8::new(height_parsed),
                     NonZeroU16::new(mine_parsed),
                 ) {
                     (Some(r), Some(c), Some(m)) => (r, c, m),
@@ -111,7 +111,7 @@ impl Screen for CustomSetup {
                         return None;
                     }
                 };
-                let board = match Board::create_custom(rows, columns, mines) {
+                let board = match Board::create_custom(width, height, mines) {
                     Ok(board) => board,
                     Err(BoardError::InvalidBoardSize) => {
                         self.error_message =
@@ -135,23 +135,23 @@ impl Screen for CustomSetup {
         }
     }
     fn view(&self) -> Element<'_, SuperMessage> {
-        let row_text = GuiWidget::text("Rows:");
-        let row_input = GuiWidget::text_input("", &self.row_string)
-            .on_input(|new_value| SuperMessage::CustomSetup(Message::RowChanged(new_value)));
+        let width_text = GuiWidget::text("Width:");
+        let width_input = GuiWidget::text_input("", &self.width_string)
+            .on_input(|new_value| SuperMessage::CustomSetup(Message::WidthChanged(new_value)));
 
-        let column_text = GuiWidget::text("Columns:");
-        let column_input = GuiWidget::text_input("", &self.column_string)
-            .on_input(|new_value| SuperMessage::CustomSetup(Message::ColumnChanged(new_value)));
+        let height_text = GuiWidget::text("Height:");
+        let height_input = GuiWidget::text_input("", &self.height_string)
+            .on_input(|new_value| SuperMessage::CustomSetup(Message::HeightChanged(new_value)));
 
         let mines_text = GuiWidget::text("Mines:");
         let mines_input = GuiWidget::text_input("", &self.mines_string)
             .on_input(|new_value| SuperMessage::CustomSetup(Message::MinesChanged(new_value)));
 
-        let inputs = GuiWidget::column![row_input, column_input, mines_input]
+        let inputs = GuiWidget::column![width_input, height_input, mines_input]
             .spacing(10)
             .align_x(iced::Right)
             .width(60);
-        let texts = GuiWidget::column![row_text, column_text, mines_text]
+        let texts = GuiWidget::column![width_text, height_text, mines_text]
             .spacing(20)
             .align_x(iced::Left);
 

@@ -61,7 +61,7 @@ impl Screen for GameSelection {
         let intermediate_button = GuiWidget::button("Intermediate (16x16, 40 mines)")
             .on_press(SuperMessage::GameSelection(Message::IntermediateSelected))
             .style(GuiWidget::button::primary);
-        let expert_button = GuiWidget::button("Expert (16x30, 99 mines)")
+        let expert_button = GuiWidget::button("Expert (30x16, 99 mines)")
             .on_press(SuperMessage::GameSelection(Message::ExpertSelected))
             .style(GuiWidget::button::primary);
         let custom_button = GuiWidget::button("Custom")
