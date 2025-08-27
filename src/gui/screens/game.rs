@@ -91,14 +91,19 @@ impl Screen for Game {
         }
     }
     fn view(&self) -> Element<'_, SuperMessage> {
-        let todo_message = GuiWidget::text("Game screen is under construction!");
-        let back_button = GuiWidget::button("Back")
-            .on_press(SuperMessage::Game(Message::Back))
-            .style(GuiWidget::button::secondary);
-        let content = GuiWidget::column![todo_message, back_button]
-            .align_x(iced::Center)
-            .spacing(20);
-        GuiWidget::center(content).into()
+        let board = GuiWidget::container(self.board())
+            .style(GuiWidget::container::bordered_box)
+            .padding(10);
+        let top_bar = GuiWidget::container(self.top_bar())
+            .style(GuiWidget::container::bordered_box)
+            .padding(10);
+        let mut game_content = GuiWidget::column![top_bar, board]
+            .spacing(10)
+            .align_x(iced::Center);
+        if let Some(end_content) = self.end_of_screen() {
+            game_content = game_content.push(end_content);
+        }
+        GuiWidget::center(game_content).into()
     }
     fn subscription(&self) -> Option<Subscription<SuperMessage>> {
         match self.board.get_state() {
@@ -145,6 +150,53 @@ impl_game_image!(
 );
 
 impl Game {
+    pub fn reset_button(&self) -> Element<'_, SuperMessage> {
+        // TODO: Change icon based on game state (in progress, won, lost), as well as
+        // make it based on theme.
+        GuiWidget::button(GuiWidget::text("Reset"))
+            .on_press(SuperMessage::Game(Message::ResetGame))
+            .style(GuiWidget::button::danger)
+            .into()
+    }
+    pub fn top_bar(&self) -> Element<'_, SuperMessage> {
+        let remaining_mine_count = self.board.get_remaining_mine_count();
+        let mine_count_text = GuiWidget::text(format!("{remaining_mine_count:03}"));
+
+        let reset_button = self.reset_button();
+
+        let elapsed_time = self.current_time.duration_since(self.start_time).as_secs();
+        let time_text = GuiWidget::text!("{elapsed_time:03}");
+
+        let content = GuiWidget::row![
+            GuiWidget::container(mine_count_text).width(iced::Fill),
+            GuiWidget::center_x(reset_button),
+            GuiWidget::right(time_text)
+        ];
+        content
+            .width((self.board.get_width() as usize * 16) as f32)
+            .into()
+    }
+    pub fn end_of_screen(&self) -> Option<Element<'_, SuperMessage>> {
+        match self.board.get_state() {
+            BoardState::InProgress => None,
+            BoardState::Won => {
+                let win_text = GuiWidget::text("You found all the mines. You win!");
+                let return_button = GuiWidget::button("Return to main menu")
+                    .on_press(SuperMessage::Game(Message::Back))
+                    .style(GuiWidget::button::secondary);
+                let content = GuiWidget::column![win_text, return_button].into();
+                Some(content)
+            }
+            BoardState::Lost => {
+                let lose_text = GuiWidget::text("You hit a mine! You lose!");
+                let return_button = GuiWidget::button("Return to main menu")
+                    .on_press(SuperMessage::Game(Message::Back))
+                    .style(GuiWidget::button::secondary);
+                let content = GuiWidget::column![lose_text, return_button].into();
+                Some(content)
+            }
+        }
+    }
     pub fn board(&self) -> impl Into<Element<'_, SuperMessage>> {
         let mut board_content = GuiWidget::Grid::with_capacity(
             self.board.get_width() as usize * self.board.get_height() as usize,
@@ -158,7 +210,21 @@ impl Game {
         }
         board_content
     }
-    pub fn cell_content(&self, cell: &Cell) -> impl Into<Element<'_, SuperMessage>> {
+    pub fn cell(&self, x: u8, y: u8) -> Element<'_, SuperMessage> {
+        let cell = self.board.get_cell(x, y).unwrap();
+        let content = self.cell_content(cell);
+        let is_playing = matches!(self.board.get_state(), BoardState::InProgress);
+        if is_playing {
+            GuiWidget::mouse_area(content)
+                .on_press(SuperMessage::Game(Message::OpenCell(x, y)))
+                .on_right_press(SuperMessage::Game(Message::ToggleFlag(x, y)))
+                .on_middle_press(SuperMessage::Game(Message::ChordCell(x, y)))
+                .into()
+        } else {
+            content
+        }
+    }
+    pub fn cell_content(&self, cell: &Cell) -> Element<'_, SuperMessage> {
         let content = if cell.is_open() {
             if cell.is_mine() {
                 self.exploded_mine()
@@ -185,7 +251,14 @@ impl Game {
                         // unreachable.
                         _ => unsafe { std::hint::unreachable_unchecked() },
                     };
-                    let text = GuiWidget::text!("{adjacent_mines}").color(color);
+                    let text = GuiWidget::center(
+                        GuiWidget::text!("{adjacent_mines}")
+                            .size(14)
+                            .font(iced::font::Font::MONOSPACE)
+                            .color(color),
+                    )
+                    .width(16)
+                    .height(16);
                     stack = stack.push(text);
                     stack.into()
                 }
@@ -219,20 +292,6 @@ impl Game {
                 }
             }
         };
-        GuiWidget::center(content).width(16).height(16)
-    }
-    pub fn cell(&self, x: u8, y: u8) -> Element<'_, SuperMessage> {
-        let cell = self.board.get_cell(x, y).unwrap();
-        let content = self.cell_content(cell);
-        let is_playing = matches!(self.board.get_state(), BoardState::InProgress);
-        if is_playing {
-            GuiWidget::mouse_area(content)
-                .on_press(SuperMessage::Game(Message::OpenCell(x, y)))
-                .on_right_press(SuperMessage::Game(Message::ToggleFlag(x, y)))
-                .on_middle_press(SuperMessage::Game(Message::ChordCell(x, y)))
-                .into()
-        } else {
-            content.into()
-        }
+        GuiWidget::center(content).width(16).height(16).into()
     }
 }
