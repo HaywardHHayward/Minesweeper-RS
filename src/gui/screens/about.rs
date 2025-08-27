@@ -1,27 +1,40 @@
-use iced::{Element, Task, widget as GuiWidget, widget::span};
+﻿use std::sync::Arc;
 
-use crate::gui::{Message as AppMessage, ScreenTrait};
+use GuiWidget::span;
+use iced::{Element, Task, widget as GuiWidget};
 
-#[derive(Clone, Debug)]
-pub(crate) enum Action {
-    ReturnToMainMenu,
+use super::{AppMessage, MainMenu, Message as SuperMessage};
+use crate::{ArcLock, Config, Screen};
+#[derive(Debug, Clone)]
+pub enum Message {
+    Back,
 }
 
-#[derive(Debug, Default)]
-pub(crate) struct About;
+#[derive(Debug)]
+pub struct About {
+    config: ArcLock<Config>,
+}
 
-impl ScreenTrait for About {
-    type Message = Action;
+impl About {
+    pub fn build(config: ArcLock<Config>) -> Self {
+        Self { config }
+    }
+}
 
-    fn update(&mut self, message: Self::Message) -> Task<AppMessage> {
+impl Screen for About {
+    fn update(&mut self, message: SuperMessage) -> Option<Task<SuperMessage>> {
+        let SuperMessage::About(message) = message else {
+            return None;
+        };
+        let config = self.config.clone();
         match message {
-            Self::Message::ReturnToMainMenu => {
-                Task::done(AppMessage::ChangeScreen(crate::gui::ScreenType::MainMenu))
-            }
+            Message::Back => Some(Task::perform(
+                async { MainMenu::build(config) },
+                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
+            )),
         }
     }
-
-    fn view(&self) -> Element<'_, Self::Message> {
+    fn view(&self) -> Element<'_, SuperMessage> {
         let intro_message = GuiWidget::text(
             "This application was made using the Rust programming language by Hayden Reckward, using the following libraries:",
         );
@@ -79,6 +92,12 @@ impl ScreenTrait for About {
             span(" crate, by Lokathor")
         ]
         .on_link_click(iced::never);
+        let thiserror = GuiWidget::rich_text![
+            span("The "),
+            span("thiserror").font(bold_font),
+            span(" crate, by David Tolnay")
+        ]
+        .on_link_click(iced::never);
 
         let library_text = GuiWidget::column![
             rand,
@@ -88,15 +107,17 @@ impl ScreenTrait for About {
             directories,
             zip,
             walkdir,
-            tinyvec
+            tinyvec,
+            thiserror
         ];
 
         let about_text = GuiWidget::column![intro_message, library_text]
             .align_x(iced::Center)
             .spacing(30);
 
-        let return_button =
-            GuiWidget::button("Return to main menu").on_press(Self::Message::ReturnToMainMenu);
+        let return_button = GuiWidget::button("Return to main menu")
+            .on_press(SuperMessage::About(Message::Back))
+            .style(GuiWidget::button::secondary);
 
         let content = GuiWidget::column![about_text, return_button]
             .align_x(iced::Center)

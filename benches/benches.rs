@@ -1,4 +1,6 @@
-﻿use std::num::{NonZeroU8, NonZeroU16};
+#![cfg(feature = "benching")]
+
+use std::num::{NonZeroU8, NonZeroU16};
 
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 

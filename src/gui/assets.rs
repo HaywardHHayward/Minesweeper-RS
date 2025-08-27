@@ -1,14 +1,18 @@
-﻿use std::io::Read;
+use std::io::Read;
 
+use thiserror::Error;
 use zip::{ZipArchive, result};
 
 static ASSET_DATA: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/assets.zip"));
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 enum CacheError {
+    #[error("Asset not found in cache")]
     NotFound,
-    IoError(std::io::Error),
-    ZipError(result::ZipError),
+    #[error("I/O error: {0}")]
+    IoError(#[from] std::io::Error),
+    #[error("Zip error: {0}")]
+    ZipError(#[from] result::ZipError),
 }
 fn get_data_from_cache(path: &std::path::Path) -> Result<Vec<u8>, CacheError> {
     let cached_asset_file = crate::Application::app_dirs()
@@ -43,15 +47,17 @@ fn create_cache() -> Result<(), CacheError> {
     Ok(())
 }
 
+pub static ICON: &[u8] = include_bytes!("../../assets/Icon.qoi");
+
 macro_rules! create_assets {
     ($([$name:ident, $extension:literal$(, $attr:meta)?]),*) => {
         $(
             $(#[$attr])?
-            pub(crate) mod $name {
+            pub mod $name {
                 use std::sync::LazyLock;
 
                 use super::*;
-                pub(crate) static OPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
+                pub static OPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
                     let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/OpenedCell.", $extension)));
                     match cache_result {
                         Ok(data) => data,
@@ -66,7 +72,7 @@ macro_rules! create_assets {
                     }
                 });
 
-                pub(crate) static UNOPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
+                pub static UNOPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
                     let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/UnopenedCell.", $extension)));
                     match cache_result {
                         Ok(data) => data,
@@ -81,7 +87,7 @@ macro_rules! create_assets {
                     }
                 });
 
-                pub(crate) static MINE: LazyLock<Vec<u8>> = LazyLock::new(|| {
+                pub static MINE: LazyLock<Vec<u8>> = LazyLock::new(|| {
                     let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/Mine.", $extension)));
                     match cache_result {
                         Ok(data) => data,
@@ -96,7 +102,7 @@ macro_rules! create_assets {
                     }
                 });
 
-                pub(crate) static FLAG: LazyLock<Vec<u8>> = LazyLock::new(|| {
+                pub static FLAG: LazyLock<Vec<u8>> = LazyLock::new(|| {
                     let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/Flag.", $extension)));
                     match cache_result {
                         Ok(data) => data,
@@ -111,7 +117,7 @@ macro_rules! create_assets {
                     }
                 });
 
-                pub(crate) static INCORRECT_FLAG: LazyLock<Vec<u8>> = LazyLock::new(|| {
+                pub static INCORRECT_FLAG: LazyLock<Vec<u8>> = LazyLock::new(|| {
                     let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/IncorrectFlag.", $extension)));
                     match cache_result {
                         Ok(data) => data,
@@ -126,7 +132,7 @@ macro_rules! create_assets {
                     }
                 });
 
-                pub(crate) static EXPLODED_MINE: LazyLock<Vec<u8>> = LazyLock::new(|| {
+                pub static EXPLODED_MINE: LazyLock<Vec<u8>> = LazyLock::new(|| {
                     let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/ExplodedMine.", $extension)));
                     match cache_result {
                         Ok(data) => data,

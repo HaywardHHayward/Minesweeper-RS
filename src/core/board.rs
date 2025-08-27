@@ -29,7 +29,8 @@ pub struct Board {
 #[derive(Debug)]
 pub enum BoardError {
     InvalidBoardSize,
-    TooManyMines(NonZeroU16), // The number of mines equals to or exceeds the board area
+    TooManyMines { max_mines: NonZeroU16 }, /* The number of mines equals to or exceeds the
+                                             * board area */
 }
 
 impl Board {
@@ -47,9 +48,9 @@ impl Board {
         if mine_count.get() >= board_area {
             // The number of mines is equal to the board area (which is not a game) or
             // exceeds it (which is impossible to construct)
-            return Err(BoardError::TooManyMines(
-                NonZeroU16::new(board_area - 1).unwrap(),
-            ));
+            return Err(BoardError::TooManyMines {
+                max_mines: NonZeroU16::new(board_area - 1).unwrap(),
+            });
         }
         let cells = vec![Cell::new(); board_area as usize];
         let unopened_coordinates = (0..width.get())
@@ -121,7 +122,7 @@ impl Board {
     pub const fn get_mine_count(&self) -> u16 {
         self.mine_count.get()
     }
-    pub fn get_remaining_mines(&self) -> i32 {
+    pub fn get_remaining_mine_count(&self) -> i32 {
         // Subtracts how many cells have been flagged from how many mines there are
         (self.mine_count.get() as i32)
             - (self

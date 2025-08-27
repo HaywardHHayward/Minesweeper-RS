@@ -1,4 +1,4 @@
-﻿#[cfg(not(feature = "non-free"))]
+#[cfg(not(feature = "non-free"))]
 const NON_FREE_DIRS: [&str; 1] = ["classic"];
 
 fn exclude_files(entry: &walkdir::DirEntry) -> bool {
@@ -8,6 +8,7 @@ fn exclude_files(entry: &walkdir::DirEntry) -> bool {
         return !NON_FREE_DIRS.contains(&entry.file_name().to_string_lossy().as_ref());
     }
     entry.file_name().to_string_lossy() != "LICENSE"
+        || entry.file_name().to_string_lossy() != "Icon.qoi"
 }
 
 fn compress_assets() {

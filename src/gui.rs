@@ -1,21 +1,22 @@
-use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
 use iced::{Element, Subscription, Task};
+use screens::Message;
 
-mod assets;
-mod config;
+pub mod assets;
+pub mod config;
+pub mod screens;
 
-pub fn update(state: &mut Application, message: PublicMessage) -> Task<PublicMessage> {
-    let message = message.0;
-    state.update(message).map(PublicMessage)
+pub fn update(state: &mut Application, message: Message) -> Task<Message> {
+    state.update(message).unwrap_or(Task::none())
 }
 
-pub fn view(state: &Application) -> Element<'_, PublicMessage> {
-    state.view().map(PublicMessage)
+pub fn view(state: &Application) -> Element<'_, Message> {
+    state.view()
 }
 
-pub fn subscription(state: &Application) -> Subscription<PublicMessage> {
-    state.subscription().map(PublicMessage)
+pub fn subscription(state: &Application) -> Subscription<Message> {
+    state.subscription().unwrap_or(Subscription::none())
 }
 
 pub fn theme(state: &Application) -> iced::Theme {
@@ -23,67 +24,99 @@ pub fn theme(state: &Application) -> iced::Theme {
 }
 
 pub fn scale_factor(state: &Application) -> f64 {
-    state.config.get_scale_factor()
+    state.config.read().unwrap().scale_factor
 }
 
-/// Trait that defines the interface for screens in the application. Based on
-/// the Elm architecture.
-pub(crate) trait ScreenTrait: std::fmt::Debug {
-    /// The type of messages that the screen can handle.
-    type Message: std::fmt::Debug;
-    /// Updates the screen's state based on the provided message. Returns a task
-    /// containing the highest level of message to be processed by the
-    /// application.
-    ///
-    /// Returns the highest level of message to allow for screens to
-    /// do application level actions such as changing the screen or
-    /// initializing a new screen, but only receives messages that are specific
-    /// to the screen, since only the highest level abstraction of the
-    /// application should HANDLE application level actions.
-    fn update(&mut self, message: Self::Message) -> Task<Message> {
+pub trait Screen: std::fmt::Debug + Send + Sync {
+    fn update(&mut self, message: Message) -> Option<Task<Message>> {
         let _ = message;
-        Task::none()
+        None
     }
-    /// Returns the current declarative view of the screen as an `Element`.
-    fn view(&self) -> Element<'_, Self::Message> {
+    fn view(&self) -> Element<'_, Message> {
         iced::widget::text!("Unfinished screen, current state: {self:?}").into()
     }
-    /// Returns a subscription for the screen, which can be used to handle
-    /// passive events such as checking for keypresses, or time based events.
-    fn subscription(&self) -> Subscription<Self::Message> {
-        Subscription::none()
+    fn subscription(&self) -> Option<Subscription<Message>> {
+        None
+    }
+}
+
+pub type ArcLock<T> = Arc<RwLock<T>>;
+
+#[derive(Clone)]
+pub enum AppMessage {
+    ChangeScreen(Arc<Box<dyn Screen>>),
+    CloseApp,
+}
+
+impl std::fmt::Debug for AppMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AppMessage::ChangeScreen(_) => write!(f, "ChangeScreen"),
+            AppMessage::CloseApp => write!(f, "CloseApp"),
+        }
     }
 }
 
 #[derive(Debug)]
 pub struct Application {
-    current_screen: ScreenType,
-    screens: HashMap<ScreenType, Screen>,
-    config: config::Config,
+    screen: Box<dyn Screen>,
+    config: ArcLock<config::Config>,
+}
+
+impl Screen for Application {
+    fn update(&mut self, message: Message) -> Option<Task<Message>> {
+        let Message::App(message) = message else {
+            return self.screen.update(message);
+        };
+        match message {
+            AppMessage::ChangeScreen(builder) => {
+                self.screen = Arc::into_inner(builder).unwrap();
+                None
+            }
+            AppMessage::CloseApp => {
+                self.clear_cache().unwrap_or_else(|e| {
+                    eprintln!("Failed to clear cache: {e}");
+                });
+                let config = self.config.read().unwrap();
+                let config_path = Application::app_dirs().config_dir().join("config.yaml");
+                config.save(&config_path);
+                Some(iced::exit())
+            }
+        }
+    }
+    fn view(&self) -> Element<'_, Message> {
+        self.screen.view()
+    }
+    fn subscription(&self) -> Option<Subscription<Message>> {
+        let close_subscription =
+            iced::window::close_requests().map(|_| Message::App(AppMessage::CloseApp));
+        if let Some(sub_subscription) = self.screen.subscription() {
+            Some(Subscription::batch([close_subscription, sub_subscription]))
+        } else {
+            Some(close_subscription)
+        }
+    }
 }
 
 impl Application {
-    pub(crate) fn app_dirs() -> directories::ProjectDirs {
+    pub fn app_dirs() -> directories::ProjectDirs {
         directories::ProjectDirs::from("", "HaywardHHayward", "Minesweeper")
             .expect("Failed to get project directories")
     }
-    pub(crate) fn theme(&self) -> iced::Theme {
-        match self.config.get_menu_theme() {
+    pub fn theme(&self) -> iced::Theme {
+        match &self.config.read().unwrap().theme.menu_theme {
             config::MenuTheme::Light => iced::Theme::Light,
             config::MenuTheme::Dark => iced::Theme::Dark,
         }
     }
-    pub(crate) fn clear_cache(&mut self) -> Result<(), std::io::Error> {
+    pub fn clear_cache(&mut self) -> Result<(), std::io::Error> {
         let cache_dir = Self::app_dirs().cache_dir().to_path_buf();
         if cache_dir.exists() {
             std::fs::remove_dir_all(&cache_dir)?;
         }
         Ok(())
     }
-}
-
-impl Default for Application {
-    fn default() -> Self {
+    pub fn create() -> Self {
         let config_dir = Application::app_dirs().config_dir().to_path_buf();
         if !config_dir.exists() {
             std::fs::create_dir_all(&config_dir).expect("Failed to create config directory");
@@ -104,173 +137,10 @@ impl Default for Application {
             config.save(&config_path);
             config
         };
-        let mut screens = HashMap::with_capacity(3);
-        screens.insert(ScreenType::MainMenu, Screen::MainMenu(main_menu::MainMenu));
-        screens.insert(
-            ScreenType::SettingsScreen,
-            Screen::SettingsScreen(settings_screen::SettingsScreen::new(config)),
-        );
-        screens.insert(ScreenType::About, Screen::About(about::About));
+        let config = Arc::new(RwLock::new(config));
         Application {
-            current_screen: ScreenType::MainMenu,
-            screens,
+            screen: Box::new(screens::main_menu::MainMenu::build(config.clone())),
             config,
-        }
-    }
-}
-
-impl ScreenTrait for Application {
-    type Message = Message;
-    fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
-        match message {
-            Message::InitializeScreen {
-                screen_type,
-                initializer_fn,
-            } => {
-                let screen = initializer_fn(());
-                self.screens.insert(screen_type, screen);
-                self.current_screen = screen_type;
-                Task::none()
-            }
-            Message::ChangeScreen(screen_type) => {
-                self.current_screen = screen_type;
-                Task::none()
-            }
-            Message::ScreenAction(screen_message) => {
-                // Message is a ScreenMessage, so we need to pass it along it to the current
-                // screen, for now we panic if the screen is not found, but this
-                // should be handled more gracefully
-                self.screens
-                    .get_mut(&self.current_screen)
-                    .unwrap_or_else(|| panic!("current_screen {:?} not found", self.current_screen))
-                    .update(screen_message)
-            }
-            Message::ReadConfig => {
-                self.config =
-                    config::Config::load(&Self::app_dirs().config_dir().join("config.yaml"))
-                        .unwrap();
-                Task::none()
-            }
-            Message::SendConfig(callback) => {
-                let config = self.config;
-                Task::done(callback(config))
-            }
-            Message::CloseApp => {
-                let cache_cleared = self.clear_cache();
-                if let Err(e) = cache_cleared {
-                    eprintln!("Failed to clear cache: {e}");
-                }
-                iced::exit()
-            }
-        }
-    }
-    fn view(&self) -> Element<'_, Self::Message> {
-        // Retrieve the current screen and call its view method, for now we panic if the
-        // screen is not found, but this should be handled more gracefully
-        self.screens
-            .get(&self.current_screen)
-            .unwrap_or_else(|| panic!("current_screen {:?} not found", self.current_screen))
-            .view()
-            .map(Message::ScreenAction)
-    }
-    fn subscription(&self) -> Subscription<Self::Message> {
-        // Retrieve the current screen and call its subscription method, for now we
-        // panic if the screen is not found, but this should be handled more
-        // gracefully
-        let close_request = iced::window::close_requests().map(|_| Message::CloseApp);
-        let screen_subscription = self
-            .screens
-            .get(&self.current_screen)
-            .unwrap_or_else(|| panic!("current_screen {:?} not found", self.current_screen))
-            .subscription()
-            .map(Message::ScreenAction);
-        Subscription::batch([close_request, screen_subscription])
-    }
-}
-
-// Automatically adds new screen modules, new variants to ScreenMessage and
-// ScreenType, and automatically adds the new screen types to Screen::update,
-// Screen::view, and Screen::subscription
-macro_rules! create_screens {
-    ($([$snake_case:ident, $pascal_case:ident]),*) => {
-        $(pub(crate) mod $snake_case;)*
-
-        #[derive(Debug)]
-        pub(crate) enum ScreenMessage {
-            $($pascal_case($snake_case::Action),)*
-        }
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-        pub(crate) enum ScreenType {
-            $($pascal_case,)*
-        }
-
-        #[derive(Debug)]
-        pub(crate) enum Screen {
-            $($pascal_case($snake_case::$pascal_case),)*
-        }
-
-        impl ScreenTrait for Screen {
-            type Message = ScreenMessage;
-            fn update(&mut self, message: Self::Message) -> Task<Message> {
-                match (self, message) {
-                    $((Self::$pascal_case($snake_case), Self::Message::$pascal_case(action)) => $snake_case.update(action),)*
-                    _ => Task::none()
-                }
-            }
-            fn view(&self) -> Element<'_, Self::Message> {
-                match self {
-                    $(Self::$pascal_case($snake_case) => $snake_case.view().map(Self::Message::$pascal_case),)*
-                }
-            }
-            fn subscription(&self) -> Subscription<Self::Message> {
-                match self {
-                    $(Self::$pascal_case($snake_case) => $snake_case.subscription().map(Self::Message::$pascal_case),)*
-                }
-            }
-        }
-    };
-}
-
-create_screens! {
-    [about, About],
-    [game, Game],
-    [game_selection, GameSelection],
-    [main_menu, MainMenu],
-    [settings_screen, SettingsScreen]
-}
-
-#[derive(Debug)]
-pub struct PublicMessage(Message);
-
-type Callback<Input, Output> = Box<dyn FnOnce(Input) -> Output + Send + Sync>;
-
-pub(crate) enum Message {
-    InitializeScreen {
-        screen_type: ScreenType,
-        initializer_fn: Callback<(), Screen>,
-    },
-    ChangeScreen(ScreenType),
-    ScreenAction(ScreenMessage),
-    ReadConfig,
-    SendConfig(Callback<config::Config, Message>),
-    CloseApp,
-}
-
-impl std::fmt::Debug for Message {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Message::InitializeScreen {
-                screen_type,
-                initializer_fn: _,
-            } => {
-                write!(f, "InitializeScreen({screen_type:?}, .. )")
-            }
-            Message::ChangeScreen(screen_type) => write!(f, "ChangeScreen({screen_type:?})"),
-            Message::ScreenAction(action) => write!(f, "ScreenAction({action:?})"),
-            Message::ReadConfig => write!(f, "ReadConfig"),
-            Message::SendConfig(_) => write!(f, "SendConfig(..)"),
-            Message::CloseApp => write!(f, "CloseApp"),
         }
     }
 }
