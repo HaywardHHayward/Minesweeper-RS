@@ -186,14 +186,16 @@ impl Screen for CustomSetup {
             .spacing(10)
             .align_y(iced::Center);
 
-        let mut content = GuiWidget::column![input_content, buttons]
-            .spacing(20)
-            .align_x(iced::Center);
+        let error_message = GuiWidget::text(self.error_message.as_deref().unwrap_or(""));
 
-        if let Some(error) = &self.error_message {
-            let error_text = GuiWidget::text(error.as_ref()).color(iced::color!(0xFF0000));
-            content = content.push(error_text);
-        }
+        let content = GuiWidget::column![
+            input_content,
+            GuiWidget::vertical_space().height(10),
+            error_message,
+            buttons
+        ]
+        .spacing(10)
+        .align_x(iced::Center);
 
         GuiWidget::center(content).into()
     }

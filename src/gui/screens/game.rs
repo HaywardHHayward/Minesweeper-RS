@@ -177,13 +177,10 @@ impl Game {
             .into()
     }
     pub fn end_of_screen(&self) -> Option<Element<'_, SuperMessage>> {
-        if matches!(self.board.get_state(), BoardState::InProgress) {
-            return None;
-        }
         let text = GuiWidget::text(match self.board.get_state() {
             BoardState::Won => "You found all the mines. You win!",
             BoardState::Lost => "You hit a mine! You lose!",
-            BoardState::InProgress => unreachable!(),
+            BoardState::InProgress => "",
         });
         let return_button = GuiWidget::button("Return to main menu")
             .on_press(SuperMessage::Game(Message::Back))
@@ -194,7 +191,9 @@ impl Game {
                     .menu_theme
                     .button_style(crate::MenuButtonStyle::Secondary)(theme, status)
             });
-        let content = GuiWidget::column![text, return_button].into();
+        let content = GuiWidget::column![text, return_button]
+            .align_x(iced::Center)
+            .into();
         Some(content)
     }
     pub fn board(&self) -> impl Into<Element<'_, SuperMessage>> {
