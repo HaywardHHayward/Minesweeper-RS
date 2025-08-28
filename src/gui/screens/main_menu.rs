@@ -52,16 +52,48 @@ impl Screen for MainMenu {
 
         let play_button = GuiWidget::button("Play")
             .on_press(SuperMessage::MainMenu(Message::ToGameSelection))
-            .style(GuiWidget::button::primary);
+            .style(|theme, status| {
+                self.config
+                    .read()
+                    .unwrap()
+                    .menu_theme
+                    .button_style(crate::gui::config::MenuButtonStyle::Primary)(
+                    theme, status
+                )
+            });
         let settings_button = GuiWidget::button("Settings")
             .on_press(SuperMessage::MainMenu(Message::ToSettings))
-            .style(GuiWidget::button::secondary);
+            .style(|theme, status| {
+                self.config
+                    .read()
+                    .unwrap()
+                    .menu_theme
+                    .button_style(crate::gui::config::MenuButtonStyle::Secondary)(
+                    theme, status
+                )
+            });
         let about_button = GuiWidget::button("About")
             .on_press(SuperMessage::MainMenu(Message::ToAbout))
-            .style(GuiWidget::button::secondary);
+            .style(|theme, status| {
+                self.config
+                    .read()
+                    .unwrap()
+                    .menu_theme
+                    .button_style(crate::gui::config::MenuButtonStyle::Secondary)(
+                    theme, status
+                )
+            });
         let quit_button = GuiWidget::button("Quit")
             .on_press(SuperMessage::MainMenu(Message::Quit))
-            .style(GuiWidget::button::danger);
+            .style(|theme, status| {
+                self.config
+                    .read()
+                    .unwrap()
+                    .menu_theme
+                    .button_style(crate::gui::config::MenuButtonStyle::Danger)(
+                    theme, status
+                )
+            });
         let buttons = GuiWidget::column![play_button, settings_button, about_button, quit_button]
             .width(iced::Shrink)
             .spacing(5)

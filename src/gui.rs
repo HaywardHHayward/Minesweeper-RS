@@ -104,10 +104,7 @@ impl Application {
             .expect("Failed to get project directories")
     }
     pub fn theme(&self) -> iced::Theme {
-        match &self.config.read().unwrap().theme.menu_theme {
-            config::MenuTheme::Light => iced::Theme::Light,
-            config::MenuTheme::Dark => iced::Theme::Dark,
-        }
+        self.config.read().unwrap().menu_theme.theme()
     }
     pub fn clear_cache(&mut self) -> Result<(), std::io::Error> {
         let cache_dir = Self::app_dirs().cache_dir().to_path_buf();

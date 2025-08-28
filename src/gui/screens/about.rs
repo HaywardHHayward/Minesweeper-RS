@@ -5,6 +5,7 @@ use iced::{Element, Task, widget as GuiWidget};
 
 use super::{AppMessage, MainMenu, Message as SuperMessage};
 use crate::{ArcLock, Config, Screen};
+
 #[derive(Debug, Clone)]
 pub enum Message {
     Back,
@@ -117,7 +118,13 @@ impl Screen for About {
 
         let return_button = GuiWidget::button("Return to main menu")
             .on_press(SuperMessage::About(Message::Back))
-            .style(GuiWidget::button::secondary);
+            .style(move |theme, status| {
+                self.config
+                    .read()
+                    .unwrap()
+                    .menu_theme
+                    .button_style(crate::MenuButtonStyle::Secondary)(theme, status)
+            });
 
         let content = GuiWidget::column![about_text, return_button]
             .align_x(iced::Center)

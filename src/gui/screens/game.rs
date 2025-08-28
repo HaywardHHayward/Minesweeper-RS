@@ -122,7 +122,7 @@ macro_rules! impl_game_image {
         impl Game {
             $(
                 fn $function_name(&self) -> Element<'_, SuperMessage> {
-                    match self.config.read().unwrap().theme.game_theme {
+                    match self.config.read().unwrap().game_theme {
                         GameTheme::SimpleLight => GuiSvg::Svg::new(GuiSvg::Handle::from_memory(
                             crate::gui::assets::simple_light::$static_name.as_slice(),
                         )).into(),
@@ -177,25 +177,25 @@ impl Game {
             .into()
     }
     pub fn end_of_screen(&self) -> Option<Element<'_, SuperMessage>> {
-        match self.board.get_state() {
-            BoardState::InProgress => None,
-            BoardState::Won => {
-                let win_text = GuiWidget::text("You found all the mines. You win!");
-                let return_button = GuiWidget::button("Return to main menu")
-                    .on_press(SuperMessage::Game(Message::Back))
-                    .style(GuiWidget::button::secondary);
-                let content = GuiWidget::column![win_text, return_button].into();
-                Some(content)
-            }
-            BoardState::Lost => {
-                let lose_text = GuiWidget::text("You hit a mine! You lose!");
-                let return_button = GuiWidget::button("Return to main menu")
-                    .on_press(SuperMessage::Game(Message::Back))
-                    .style(GuiWidget::button::secondary);
-                let content = GuiWidget::column![lose_text, return_button].into();
-                Some(content)
-            }
+        if matches!(self.board.get_state(), BoardState::InProgress) {
+            return None;
         }
+        let text = GuiWidget::text(match self.board.get_state() {
+            BoardState::Won => "You found all the mines. You win!",
+            BoardState::Lost => "You hit a mine! You lose!",
+            BoardState::InProgress => unreachable!(),
+        });
+        let return_button = GuiWidget::button("Return to main menu")
+            .on_press(SuperMessage::Game(Message::Back))
+            .style(|theme, status| {
+                self.config
+                    .read()
+                    .unwrap()
+                    .menu_theme
+                    .button_style(crate::MenuButtonStyle::Secondary)(theme, status)
+            });
+        let content = GuiWidget::column![text, return_button].into();
+        Some(content)
     }
     pub fn board(&self) -> impl Into<Element<'_, SuperMessage>> {
         let mut board_content = GuiWidget::Grid::with_capacity(

@@ -63,10 +63,10 @@ impl Screen for SettingsScreen {
             Message::ApplyChanges => {
                 let mut config_write = self.config.write().unwrap();
                 if let Some(ref menu_theme) = self.menu_theme {
-                    config_write.theme.menu_theme = menu_theme.to_owned();
+                    config_write.menu_theme = menu_theme.to_owned();
                 }
                 if let Some(ref game_theme) = self.game_theme {
-                    config_write.theme.game_theme = game_theme.to_owned();
+                    config_write.game_theme = game_theme.to_owned();
                 }
                 if let Some(scale_factor) = self.scale_factor {
                     config_write.scale_factor = scale_factor;
@@ -89,7 +89,7 @@ impl Screen for SettingsScreen {
             GuiWidget::pick_list(MenuTheme::ALL, self.menu_theme.to_owned(), |theme| {
                 SuperMessage::SettingsScreen(Message::MenuThemeChanged(theme))
             })
-            .placeholder(self.config.read().unwrap().theme.menu_theme.to_string());
+            .placeholder(self.config.read().unwrap().menu_theme.to_string());
         let menu_theme = GuiWidget::row![menu_theme_text, menu_theme_picker].spacing(10);
 
         let game_theme_text = GuiWidget::text("Game Theme:");
@@ -97,7 +97,7 @@ impl Screen for SettingsScreen {
             GuiWidget::pick_list(GameTheme::ALL, self.game_theme.to_owned(), |theme| {
                 SuperMessage::SettingsScreen(Message::GameThemeChanged(theme))
             })
-            .placeholder(self.config.read().unwrap().theme.game_theme.to_string());
+            .placeholder(self.config.read().unwrap().game_theme.to_string());
         let game_theme = GuiWidget::row![game_theme_text, game_theme_picker].spacing(10);
 
         let scale_factor_text = GuiWidget::text("Scale Factor:");
@@ -120,13 +120,31 @@ impl Screen for SettingsScreen {
 
         let apply_button = GuiWidget::button("Apply Changes")
             .on_press(SuperMessage::SettingsScreen(Message::ApplyChanges))
-            .style(GuiWidget::button::primary);
+            .style(|theme, status| {
+                self.config
+                    .read()
+                    .unwrap()
+                    .menu_theme
+                    .button_style(crate::MenuButtonStyle::Primary)(theme, status)
+            });
         let reset_button = GuiWidget::button("Reset Changes")
             .on_press(SuperMessage::SettingsScreen(Message::ResetChanges))
-            .style(GuiWidget::button::secondary);
+            .style(|theme, status| {
+                self.config
+                    .read()
+                    .unwrap()
+                    .menu_theme
+                    .button_style(crate::MenuButtonStyle::Danger)(theme, status)
+            });
         let back_button = GuiWidget::button("Back")
             .on_press(SuperMessage::SettingsScreen(Message::Back))
-            .style(GuiWidget::button::secondary);
+            .style(|theme, status| {
+                self.config
+                    .read()
+                    .unwrap()
+                    .menu_theme
+                    .button_style(crate::MenuButtonStyle::Secondary)(theme, status)
+            });
 
         let buttons = GuiWidget::row![apply_button, reset_button, back_button].spacing(10);
 

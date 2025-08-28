@@ -161,10 +161,26 @@ impl Screen for CustomSetup {
 
         let submit_button = GuiWidget::button("Submit")
             .on_press(SuperMessage::CustomSetup(Message::Submit))
-            .style(GuiWidget::button::primary);
+            .style(|theme, status| {
+                self.config
+                    .read()
+                    .unwrap()
+                    .menu_theme
+                    .button_style(crate::gui::config::MenuButtonStyle::Primary)(
+                    theme, status
+                )
+            });
         let back_button = GuiWidget::button("Back")
             .on_press(SuperMessage::CustomSetup(Message::Back))
-            .style(GuiWidget::button::secondary);
+            .style(|theme, status| {
+                self.config
+                    .read()
+                    .unwrap()
+                    .menu_theme
+                    .button_style(crate::gui::config::MenuButtonStyle::Secondary)(
+                    theme, status
+                )
+            });
 
         let buttons = GuiWidget::row![submit_button, back_button]
             .spacing(10)
