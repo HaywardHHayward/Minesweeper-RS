@@ -1,7 +1,7 @@
 use std::{fmt::Display, fs::File, path::Path};
 
 use iced::{
-    widget as GuiWidget,
+    Element, widget as GuiWidget,
     widget::button::{Status as ButtonStatus, Style as ButtonStyle},
 };
 
@@ -60,23 +60,28 @@ impl MenuTheme {
         }
     }
 
-    pub fn button_style(
-        &'_ self,
-        button_style: MenuButtonStyle,
-    ) -> GuiWidget::button::StyleFn<'_, iced::Theme> {
+    pub fn button<'a, T: 'a>(
+        &self,
+        element: impl Into<Element<'a, T>>,
+        style: MenuButtonStyle,
+    ) -> GuiWidget::Button<'a, T> {
         match self {
-            MenuTheme::Light | MenuTheme::Dark => match button_style {
-                MenuButtonStyle::Primary => Box::new(GuiWidget::button::primary),
-                MenuButtonStyle::Secondary => Box::new(GuiWidget::button::secondary),
-                MenuButtonStyle::Danger => Box::new(GuiWidget::button::danger),
+            MenuTheme::Light | MenuTheme::Dark => match style {
+                MenuButtonStyle::Primary => {
+                    GuiWidget::button(element).style(GuiWidget::button::primary)
+                }
+                MenuButtonStyle::Secondary => {
+                    GuiWidget::button(element).style(GuiWidget::button::secondary)
+                }
+                MenuButtonStyle::Danger => {
+                    GuiWidget::button(element).style(GuiWidget::button::danger)
+                }
             },
             MenuTheme::NineX => {
-                let base_button_style = ButtonStyle {
+                let normal_button_style = ButtonStyle {
                     background: Some(iced::Background::Color(iced::color!(0xc0c0c0))),
                     text_color: iced::color!(0x222222),
-                    border: iced::Border::default()
-                        .color(iced::color!(0xDFDFDF))
-                        .width(2),
+                    border: iced::Border::default(),
                     shadow: iced::Shadow {
                         color: iced::color!(0x808080),
                         offset: iced::Vector::new(2.0, 2.0),
@@ -84,34 +89,65 @@ impl MenuTheme {
                     },
                     snap: true,
                 };
-                Box::new(move |_theme, status| match status {
-                    ButtonStatus::Active | ButtonStatus::Hovered => base_button_style,
-                    ButtonStatus::Pressed => {
-                        let mut pressed_style = base_button_style;
-                        pressed_style.shadow = iced::Shadow {
+                let content = GuiWidget::column![
+                    GuiWidget::horizontal_rule(2).style(move |_theme| {
+                        GuiWidget::rule::Style {
                             color: iced::color!(0xDFDFDF),
-                            offset: iced::Vector::new(-2.0, -2.0),
-                            blur_radius: 0.0,
-                        };
-                        pressed_style.border.color = iced::color!(0x808080);
-                        pressed_style
-                    }
-                    ButtonStatus::Disabled => {
-                        let mut disabled_style = base_button_style;
-                        disabled_style.background =
-                            Some(iced::Background::Color(iced::color!(0xE0E0E0)));
-                        disabled_style.text_color = iced::color!(0xA0A0A0);
-                        disabled_style.border = iced::Border::default()
-                            .color(iced::color!(0xA0A0A0))
-                            .width(2);
-                        disabled_style.shadow = iced::Shadow {
-                            color: iced::color!(0xC0C0C0),
-                            offset: iced::Vector::new(0.0, 0.0),
-                            blur_radius: 0.0,
-                        };
-                        disabled_style
-                    }
-                })
+                            radius: 0.0.into(),
+                            fill_mode: GuiWidget::rule::FillMode::Full,
+                            snap: true,
+                        }
+                    }),
+                    GuiWidget::center(
+                        GuiWidget::row![
+                            GuiWidget::vertical_rule(2).style(move |_theme| {
+                                GuiWidget::rule::Style {
+                                    color: iced::color!(0xDFDFDF),
+                                    radius: 0.0.into(),
+                                    fill_mode: GuiWidget::rule::FillMode::Full,
+                                    snap: true,
+                                }
+                            }),
+                            GuiWidget::center(element.into())
+                        ]
+                        .spacing(0)
+                        .padding(0)
+                    )
+                ]
+                .spacing(0)
+                .padding(0);
+                GuiWidget::button(content)
+                    .style(move |_theme, status| match status {
+                        ButtonStatus::Active | ButtonStatus::Hovered => normal_button_style,
+                        ButtonStatus::Pressed => {
+                            let mut pressed_style = normal_button_style;
+                            pressed_style.shadow = iced::Shadow {
+                                color: iced::color!(0xDFDFDF),
+                                offset: iced::Vector::new(-2.0, -2.0),
+                                blur_radius: 0.0,
+                            };
+                            pressed_style.border.color = iced::color!(0x808080);
+                            pressed_style
+                        }
+                        ButtonStatus::Disabled => {
+                            let mut disabled_style = normal_button_style;
+                            disabled_style.background =
+                                Some(iced::Background::Color(iced::color!(0xE0E0E0)));
+                            disabled_style.text_color = iced::color!(0xA0A0A0);
+                            disabled_style.border = iced::Border::default()
+                                .color(iced::color!(0xA0A0A0))
+                                .width(2);
+                            disabled_style.shadow = iced::Shadow {
+                                color: iced::color!(0xC0C0C0),
+                                offset: iced::Vector::new(0.0, 0.0),
+                                blur_radius: 0.0,
+                            };
+                            disabled_style
+                        }
+                    })
+                    .padding(0)
+                    .height(23)
+                    .width(75)
             }
         }
     }

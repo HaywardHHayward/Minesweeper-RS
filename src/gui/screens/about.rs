@@ -116,15 +116,13 @@ impl Screen for About {
             .align_x(iced::Center)
             .spacing(30);
 
-        let return_button = GuiWidget::button("Return to main menu")
-            .on_press(SuperMessage::About(Message::Back))
-            .style(move |theme, status| {
-                self.config
-                    .read()
-                    .unwrap()
-                    .menu_theme
-                    .button_style(crate::MenuButtonStyle::Secondary)(theme, status)
-            });
+        let return_button = self
+            .config
+            .read()
+            .unwrap()
+            .menu_theme
+            .button("Return to main menu", crate::MenuButtonStyle::Secondary)
+            .on_press(SuperMessage::About(Message::Back));
 
         let content = GuiWidget::column![about_text, return_button]
             .align_x(iced::Center)

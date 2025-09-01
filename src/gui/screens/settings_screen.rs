@@ -118,33 +118,16 @@ impl Screen for SettingsScreen {
 
         let settings_column = GuiWidget::column![menu_theme, game_theme, scale_factor].spacing(10);
 
-        let apply_button = GuiWidget::button("Apply Changes")
-            .on_press(SuperMessage::SettingsScreen(Message::ApplyChanges))
-            .style(|theme, status| {
-                self.config
-                    .read()
-                    .unwrap()
-                    .menu_theme
-                    .button_style(crate::MenuButtonStyle::Primary)(theme, status)
-            });
-        let reset_button = GuiWidget::button("Reset Changes")
-            .on_press(SuperMessage::SettingsScreen(Message::ResetChanges))
-            .style(|theme, status| {
-                self.config
-                    .read()
-                    .unwrap()
-                    .menu_theme
-                    .button_style(crate::MenuButtonStyle::Danger)(theme, status)
-            });
-        let back_button = GuiWidget::button("Back")
-            .on_press(SuperMessage::SettingsScreen(Message::Back))
-            .style(|theme, status| {
-                self.config
-                    .read()
-                    .unwrap()
-                    .menu_theme
-                    .button_style(crate::MenuButtonStyle::Secondary)(theme, status)
-            });
+        let menu_theme = &self.config.read().unwrap().menu_theme;
+        let apply_button = menu_theme
+            .button("Apply Changes", crate::MenuButtonStyle::Primary)
+            .on_press(SuperMessage::SettingsScreen(Message::ApplyChanges));
+        let reset_button = menu_theme
+            .button("Reset Changes", crate::MenuButtonStyle::Danger)
+            .on_press(SuperMessage::SettingsScreen(Message::ResetChanges));
+        let back_button = menu_theme
+            .button("Back", crate::MenuButtonStyle::Secondary)
+            .on_press(SuperMessage::SettingsScreen(Message::Back));
 
         let buttons = GuiWidget::row![apply_button, reset_button, back_button].spacing(10);
 

@@ -182,15 +182,10 @@ impl Game {
             BoardState::Lost => "You hit a mine! You lose!",
             BoardState::InProgress => "",
         });
-        let return_button = GuiWidget::button("Return to main menu")
-            .on_press(SuperMessage::Game(Message::Back))
-            .style(|theme, status| {
-                self.config
-                    .read()
-                    .unwrap()
-                    .menu_theme
-                    .button_style(crate::MenuButtonStyle::Secondary)(theme, status)
-            });
+        let menu_theme = &self.config.read().unwrap().menu_theme;
+        let return_button = menu_theme
+            .button("Return to main menu", crate::MenuButtonStyle::Secondary)
+            .on_press(SuperMessage::Game(Message::Back));
         let content = GuiWidget::column![text, return_button]
             .align_x(iced::Center)
             .into();

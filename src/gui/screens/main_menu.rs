@@ -50,50 +50,21 @@ impl Screen for MainMenu {
         let author_text = GuiWidget::text("by Hayward H. Hayward").size(20);
         let main_title = GuiWidget::column![title_text, author_text].align_x(iced::Center);
 
-        let play_button = GuiWidget::button("Play")
-            .on_press(SuperMessage::MainMenu(Message::ToGameSelection))
-            .style(|theme, status| {
-                self.config
-                    .read()
-                    .unwrap()
-                    .menu_theme
-                    .button_style(crate::gui::config::MenuButtonStyle::Primary)(
-                    theme, status
-                )
-            });
-        let settings_button = GuiWidget::button("Settings")
-            .on_press(SuperMessage::MainMenu(Message::ToSettings))
-            .style(|theme, status| {
-                self.config
-                    .read()
-                    .unwrap()
-                    .menu_theme
-                    .button_style(crate::gui::config::MenuButtonStyle::Secondary)(
-                    theme, status
-                )
-            });
-        let about_button = GuiWidget::button("About")
-            .on_press(SuperMessage::MainMenu(Message::ToAbout))
-            .style(|theme, status| {
-                self.config
-                    .read()
-                    .unwrap()
-                    .menu_theme
-                    .button_style(crate::gui::config::MenuButtonStyle::Secondary)(
-                    theme, status
-                )
-            });
-        let quit_button = GuiWidget::button("Quit")
-            .on_press(SuperMessage::MainMenu(Message::Quit))
-            .style(|theme, status| {
-                self.config
-                    .read()
-                    .unwrap()
-                    .menu_theme
-                    .button_style(crate::gui::config::MenuButtonStyle::Danger)(
-                    theme, status
-                )
-            });
+        let menu_theme = &self.config.read().unwrap().menu_theme;
+
+        let play_button = menu_theme
+            .button("Play", crate::gui::config::MenuButtonStyle::Primary)
+            .on_press(SuperMessage::MainMenu(Message::ToGameSelection));
+        let settings_button = menu_theme
+            .button("Settings", crate::gui::config::MenuButtonStyle::Secondary)
+            .on_press(SuperMessage::MainMenu(Message::ToSettings));
+        let about_button = menu_theme
+            .button("About", crate::gui::config::MenuButtonStyle::Secondary)
+            .on_press(SuperMessage::MainMenu(Message::ToAbout));
+        let quit_button = menu_theme
+            .button("Quit", crate::gui::config::MenuButtonStyle::Danger)
+            .on_press(SuperMessage::MainMenu(Message::Quit));
+
         let buttons = GuiWidget::column![play_button, settings_button, about_button, quit_button]
             .width(iced::Shrink)
             .spacing(5)
