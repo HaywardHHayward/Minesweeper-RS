@@ -16,7 +16,7 @@ pub enum BoardState {
 
 #[derive(Debug)]
 pub struct Board {
-    cells: Vec<Cell>,
+    cells: Box<[Cell]>,
     width: NonZeroU8,
     height: NonZeroU8,
     mine_count: NonZeroU16,
@@ -34,6 +34,34 @@ pub enum BoardError {
 }
 
 impl Board {
+    /// # Safety
+    /// This function does not perform any validation on the parameters, and
+    /// therefore it is up to the caller to ensure that the parameters are
+    /// valid. Specifically, `width` and `height` both cannot be one, and `mine
+    /// count` must be less than `width * height`.
+    #[inline]
+    unsafe fn create_unchecked(
+        width: NonZeroU8,
+        height: NonZeroU8,
+        mine_count: NonZeroU16,
+    ) -> Self {
+        let cells =
+            vec![Cell::new(); (width.get() as usize) * (height.get() as usize)].into_boxed_slice();
+        let unopened_coordinates = (0..width.get())
+            .flat_map(|x| (0..height.get()).map(move |y| (x, y)))
+            .collect();
+        let mined_coordinates = HashSet::with_capacity(mine_count.get() as usize);
+        Self {
+            cells,
+            width,
+            height,
+            mine_count,
+            unopened_coordinates,
+            mined_coordinates,
+            first_open: true,
+            state: BoardState::InProgress,
+        }
+    }
     pub fn create_custom(
         width: NonZeroU8,
         height: NonZeroU8,
@@ -52,53 +80,39 @@ impl Board {
                 max_mines: NonZeroU16::new(board_area - 1).unwrap(),
             });
         }
-        let cells = vec![Cell::new(); board_area as usize];
-        let unopened_coordinates = (0..width.get())
-            .flat_map(|x| (0..height.get()).map(move |y| (x, y)))
-            .collect();
-        let mined_coordinates = HashSet::with_capacity(mine_count.get() as usize);
-        Ok(Self {
-            cells,
-            width,
-            height,
-            mine_count,
-            unopened_coordinates,
-            mined_coordinates,
-            first_open: true,
-            state: BoardState::InProgress,
+        Ok(unsafe {
+            // SAFETY: All values have been validated above
+            Self::create_unchecked(width, height, mine_count)
         })
     }
     pub fn create_beginner() -> Self {
         unsafe {
             // SAFETY: All values are hardcoded, non-zero and within the valid range
-            Self::create_custom(
+            Self::create_unchecked(
                 NonZeroU8::new_unchecked(9),
                 NonZeroU8::new_unchecked(9),
                 NonZeroU16::new_unchecked(10),
             )
-            .unwrap_unchecked()
         }
     }
     pub fn create_intermediate() -> Self {
         unsafe {
             // SAFETY: All values are hardcoded, non-zero and within the valid range
-            Self::create_custom(
+            Self::create_unchecked(
                 NonZeroU8::new_unchecked(16),
                 NonZeroU8::new_unchecked(16),
                 NonZeroU16::new_unchecked(40),
             )
-            .unwrap_unchecked()
         }
     }
     pub fn create_expert() -> Self {
         unsafe {
             // SAFETY: All values are hardcoded, non-zero and within the valid range
-            Self::create_custom(
+            Self::create_unchecked(
                 NonZeroU8::new_unchecked(30),
                 NonZeroU8::new_unchecked(16),
                 NonZeroU16::new_unchecked(99),
             )
-            .unwrap_unchecked()
         }
     }
     pub fn get_cell(&self, x: u8, y: u8) -> Option<&Cell> {

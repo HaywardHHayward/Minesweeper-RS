@@ -9,7 +9,7 @@ use iced::{
 pub struct Config {
     pub game_theme: GameTheme,
     pub menu_theme: MenuTheme,
-    pub scale_factor: f64,
+    pub scale_factor: f32,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize, PartialEq, Clone)]
@@ -122,11 +122,10 @@ impl MenuTheme {
                         ButtonStatus::Pressed => {
                             let mut pressed_style = normal_button_style;
                             pressed_style.shadow = iced::Shadow {
-                                color: iced::color!(0xDFDFDF),
+                                color: iced::color!(0x808080),
                                 offset: iced::Vector::new(-2.0, -2.0),
                                 blur_radius: 0.0,
                             };
-                            pressed_style.border.color = iced::color!(0x808080);
                             pressed_style
                         }
                         ButtonStatus::Disabled => {

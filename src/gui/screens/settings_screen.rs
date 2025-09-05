@@ -13,7 +13,7 @@ pub enum Message {
     Back,
     MenuThemeChanged(MenuTheme),
     GameThemeChanged(GameTheme),
-    ScaleFactorChanged(f64),
+    ScaleFactorChanged(f32),
     ApplyChanges,
     ResetChanges,
 }
@@ -23,7 +23,7 @@ pub struct SettingsScreen {
     config: ArcLock<Config>,
     menu_theme: Option<MenuTheme>,
     game_theme: Option<GameTheme>,
-    scale_factor: Option<f64>,
+    scale_factor: Option<f32>,
 }
 
 impl SettingsScreen {

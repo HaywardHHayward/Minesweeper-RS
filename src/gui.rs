@@ -23,7 +23,7 @@ pub fn theme(state: &Application) -> iced::Theme {
     state.theme()
 }
 
-pub fn scale_factor(state: &Application) -> f64 {
+pub fn scale_factor(state: &Application) -> f32 {
     state.config.read().unwrap().scale_factor
 }
 
@@ -46,6 +46,8 @@ pub type ArcLock<T> = Arc<RwLock<T>>;
 pub enum AppMessage {
     ChangeScreen(Arc<Box<dyn Screen>>),
     CloseApp,
+    NextFocus,
+    PreviousFocus,
 }
 
 impl std::fmt::Debug for AppMessage {
@@ -53,6 +55,8 @@ impl std::fmt::Debug for AppMessage {
         match self {
             AppMessage::ChangeScreen(_) => write!(f, "ChangeScreen"),
             AppMessage::CloseApp => write!(f, "CloseApp"),
+            AppMessage::NextFocus => write!(f, "NextFocus"),
+            AppMessage::PreviousFocus => write!(f, "PreviousFocus"),
         }
     }
 }
@@ -82,6 +86,8 @@ impl Screen for Application {
                 config.save(&config_path);
                 Some(iced::exit())
             }
+            AppMessage::NextFocus => Some(iced::widget::focus_next()),
+            AppMessage::PreviousFocus => Some(iced::widget::focus_previous()),
         }
     }
     fn view(&self) -> Element<'_, Message> {
@@ -90,10 +96,23 @@ impl Screen for Application {
     fn subscription(&self) -> Option<Subscription<Message>> {
         let close_subscription =
             iced::window::close_requests().map(|_| Message::App(AppMessage::CloseApp));
+        let change_focus_subscription = iced::keyboard::on_key_press(|key, modifiers| match key {
+            iced::keyboard::Key::Named(iced::keyboard::key::Named::Tab) => {
+                if modifiers.is_empty() {
+                    Some(Message::App(AppMessage::NextFocus))
+                } else if modifiers == iced::keyboard::Modifiers::SHIFT {
+                    Some(Message::App(AppMessage::PreviousFocus))
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        });
+        let app_subscription = Subscription::batch([close_subscription, change_focus_subscription]);
         if let Some(sub_subscription) = self.screen.subscription() {
-            Some(Subscription::batch([close_subscription, sub_subscription]))
+            Some(Subscription::batch([app_subscription, sub_subscription]))
         } else {
-            Some(close_subscription)
+            Some(app_subscription)
         }
     }
 }
