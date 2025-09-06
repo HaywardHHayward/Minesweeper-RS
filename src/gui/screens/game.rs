@@ -1,12 +1,12 @@
 ﻿use std::{
     num::{NonZeroU8, NonZeroU16},
     sync::Arc,
-    time::Instant,
+    time::{Instant, SystemTime},
 };
 
 use iced::{Element, Subscription, Task, widget as GuiWidget, widget::svg as GuiSvg};
 
-use super::{AppMessage, MainMenu, Message as SuperMessage};
+use super::{AppMessage, Leaderboard, MainMenu, Message as SuperMessage};
 use crate::{ArcLock, Board, BoardState, Cell, Config, GameTheme, Screen};
 
 #[derive(Debug, Clone)]
@@ -17,6 +17,7 @@ pub enum Message {
     ResetGame,
     TimeUpdate(Instant),
     Back,
+    SaveTime,
 }
 
 #[derive(Debug)]
@@ -25,6 +26,7 @@ pub struct Game {
     board: Board,
     start_time: Instant,
     current_time: Instant,
+    end_time: Option<SystemTime>,
 }
 
 impl Game {
@@ -35,6 +37,7 @@ impl Game {
             board,
             start_time: game_start,
             current_time: game_start,
+            end_time: None,
         }
     }
 }
@@ -48,15 +51,33 @@ impl Screen for Game {
         match message {
             Message::OpenCell(x, y) => {
                 self.board.open_cell(x, y);
-                None
+                if matches!(self.board.get_state(), BoardState::Won) && self.end_time.is_none() {
+                    self.end_time = Some(SystemTime::now());
+                }
+                Some(
+                    Task::done(Instant::now())
+                        .map(Message::TimeUpdate)
+                        .map(SuperMessage::Game),
+                )
             }
             Message::ToggleFlag(x, y) => {
                 self.board.toggle_flag(x, y);
-                None
+                Some(
+                    Task::done(Instant::now())
+                        .map(Message::TimeUpdate)
+                        .map(SuperMessage::Game),
+                )
             }
             Message::ChordCell(x, y) => {
                 self.board.chord_cell(x, y);
-                None
+                if matches!(self.board.get_state(), BoardState::Won) && self.end_time.is_none() {
+                    self.end_time = Some(SystemTime::now());
+                }
+                Some(
+                    Task::done(Instant::now())
+                        .map(Message::TimeUpdate)
+                        .map(SuperMessage::Game),
+                )
             }
             Message::ResetGame => {
                 let (width, height, mines) = (
@@ -77,6 +98,7 @@ impl Screen for Game {
                 let new_start = Instant::now();
                 self.start_time = new_start;
                 self.current_time = new_start;
+                self.end_time = None;
                 self.board = new_board;
                 None
             }
@@ -88,6 +110,28 @@ impl Screen for Game {
                 async { MainMenu::build(config) },
                 move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
             )),
+            Message::SaveTime => {
+                let duration = self.current_time.duration_since(self.start_time);
+                let end_time = self.end_time.unwrap_or_else(SystemTime::now);
+                let (width, height, mines) = (
+                    self.board.get_width(),
+                    self.board.get_height(),
+                    self.board.get_mine_count(),
+                );
+                Some(Task::perform(
+                    async move {
+                        Leaderboard::from_new_time(
+                            config,
+                            duration,
+                            end_time,
+                            (width, height, mines),
+                        )
+                    },
+                    move |item| {
+                        SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item))))
+                    },
+                ))
+            }
         }
     }
     fn view(&self) -> Element<'_, SuperMessage> {
@@ -177,16 +221,31 @@ impl Game {
             .into()
     }
     pub fn end_of_screen(&self) -> Option<Element<'_, SuperMessage>> {
+        let menu_theme = &self.config.read().unwrap().menu_theme;
+
         let text = GuiWidget::text(match self.board.get_state() {
             BoardState::Won => "You found all the mines. You win!",
             BoardState::Lost => "You hit a mine! You lose!",
             BoardState::InProgress => "",
         });
-        let menu_theme = &self.config.read().unwrap().menu_theme;
+
+        let possible_save_time = matches!(self.board.get_state(), BoardState::Won).then(|| {
+            menu_theme
+                .button("Save Time", crate::MenuButtonStyle::Primary)
+                .on_press(SuperMessage::Game(Message::SaveTime))
+        });
         let return_button = menu_theme
             .button("Return to main menu", crate::MenuButtonStyle::Secondary)
             .on_press(SuperMessage::Game(Message::Back));
-        let content = GuiWidget::column![text, return_button]
+        let buttons = if let Some(save_time_button) = possible_save_time {
+            GuiWidget::row![save_time_button, return_button]
+        } else {
+            GuiWidget::row![return_button]
+        }
+        .spacing(10)
+        .align_y(iced::Center);
+
+        let content = GuiWidget::column![text, buttons]
             .align_x(iced::Center)
             .into();
         Some(content)

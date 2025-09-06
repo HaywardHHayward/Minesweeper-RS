@@ -99,6 +99,18 @@ impl Screen for About {
             span(" crate, by David Tolnay")
         ]
         .on_link_click(iced::never);
+        let ciborium = GuiWidget::rich_text![
+            span("The "),
+            span("ciborium").font(bold_font),
+            span(" crate, by Nathaniel McCallum")
+        ]
+        .on_link_click(iced::never);
+        let whoami = GuiWidget::rich_text![
+            span("The "),
+            span("whoami").font(bold_font),
+            span(" crate, by the WhoAmI contributors")
+        ]
+        .on_link_click(iced::never);
 
         let library_text = GuiWidget::column![
             rand,
@@ -109,7 +121,9 @@ impl Screen for About {
             zip,
             walkdir,
             tinyvec,
-            thiserror
+            thiserror,
+            ciborium,
+            whoami
         ];
 
         let about_text = GuiWidget::column![intro_message, library_text]

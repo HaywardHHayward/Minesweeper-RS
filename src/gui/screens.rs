@@ -25,5 +25,6 @@ screen_macro!(
     [game_selection, GameSelection],
     [game, Game],
     [about, About],
-    [custom_setup, CustomSetup]
+    [custom_setup, CustomSetup],
+    [leaderboard, Leaderboard]
 );

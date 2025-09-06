@@ -28,6 +28,8 @@ serde_yml = "0.0.12"
 directories = "6.0"
 zip = "5.0"
 tinyvec = "1.10"
+ciborium = "0.2"
+whoami = "1.6.1"
 
 [build-dependencies]
 zip = "5.0"
