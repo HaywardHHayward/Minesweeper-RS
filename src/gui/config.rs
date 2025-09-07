@@ -89,33 +89,21 @@ impl MenuTheme {
                     },
                     snap: true,
                 };
-                let content = GuiWidget::column![
-                    GuiWidget::horizontal_rule(2).style(move |_theme| {
-                        GuiWidget::rule::Style {
-                            color: iced::color!(0xDFDFDF),
-                            radius: 0.0.into(),
-                            fill_mode: GuiWidget::rule::FillMode::Full,
-                            snap: true,
-                        }
-                    }),
-                    GuiWidget::center(
-                        GuiWidget::row![
-                            GuiWidget::vertical_rule(2).style(move |_theme| {
-                                GuiWidget::rule::Style {
-                                    color: iced::color!(0xDFDFDF),
-                                    radius: 0.0.into(),
-                                    fill_mode: GuiWidget::rule::FillMode::Full,
-                                    snap: true,
-                                }
-                            }),
-                            GuiWidget::center(element.into())
-                        ]
-                        .spacing(0)
-                        .padding(0)
-                    )
-                ]
-                .spacing(0)
-                .padding(0);
+                let rule_style = GuiWidget::rule::Style {
+                    color: iced::color!(0xDFDFDF),
+                    radius: 0.0.into(),
+                    fill_mode: GuiWidget::rule::FillMode::Full,
+                    snap: true,
+                };
+                let content = GuiWidget::container(GuiWidget::row![
+                    GuiWidget::vertical_rule(2).style(move |_| rule_style),
+                    GuiWidget::column![
+                        GuiWidget::horizontal_rule(2).style(move |_| rule_style),
+                        GuiWidget::container(element).padding([0, 12])
+                    ]
+                ])
+                .center_y(23)
+                .center_x(iced::Shrink);
                 GuiWidget::button(content)
                     .style(move |_theme, status| match status {
                         ButtonStatus::Active | ButtonStatus::Hovered => normal_button_style,
@@ -145,8 +133,6 @@ impl MenuTheme {
                         }
                     })
                     .padding(0)
-                    .height(23)
-                    .width(75)
             }
         }
     }
