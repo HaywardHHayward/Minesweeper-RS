@@ -32,26 +32,44 @@ impl Screen for GameSelection {
         };
         let config = self.config.clone();
         match message {
-            Message::BeginnerSelected => Some(Task::perform(
-                async { Game::build(config, Board::create_beginner()) },
-                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
-            )),
-            Message::IntermediateSelected => Some(Task::perform(
-                async { Game::build(config, Board::create_intermediate()) },
-                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
-            )),
-            Message::ExpertSelected => Some(Task::perform(
-                async { Game::build(config, Board::create_expert()) },
-                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
-            )),
-            Message::CustomSelected => Some(Task::perform(
-                async { CustomSetup::build(config) },
-                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
-            )),
-            Message::Back => Some(Task::perform(
-                async { MainMenu::build(config) },
-                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
-            )),
+            Message::BeginnerSelected => Some(
+                Task::perform(
+                    async { Game::build(config, Board::create_beginner()) },
+                    move |item| Arc::new(Box::new(item) as Box<dyn Screen>),
+                )
+                .map(AppMessage::ChangeScreen)
+                .map(SuperMessage::App),
+            ),
+            Message::IntermediateSelected => Some(
+                Task::perform(
+                    async { Game::build(config, Board::create_intermediate()) },
+                    move |item| Arc::new(Box::new(item) as Box<dyn Screen>),
+                )
+                .map(AppMessage::ChangeScreen)
+                .map(SuperMessage::App),
+            ),
+            Message::ExpertSelected => Some(
+                Task::perform(
+                    async { Game::build(config, Board::create_expert()) },
+                    move |item| Arc::new(Box::new(item) as Box<dyn Screen>),
+                )
+                .map(AppMessage::ChangeScreen)
+                .map(SuperMessage::App),
+            ),
+            Message::CustomSelected => Some(
+                Task::perform(async { CustomSetup::build(config) }, move |item| {
+                    Arc::new(Box::new(item) as Box<dyn Screen>)
+                })
+                .map(AppMessage::ChangeScreen)
+                .map(SuperMessage::App),
+            ),
+            Message::Back => Some(
+                Task::perform(async { MainMenu::build(config) }, move |item| {
+                    Arc::new(Box::new(item) as Box<dyn Screen>)
+                })
+                .map(AppMessage::ChangeScreen)
+                .map(SuperMessage::App),
+            ),
         }
     }
     fn view(&self) -> iced::Element<'_, SuperMessage> {

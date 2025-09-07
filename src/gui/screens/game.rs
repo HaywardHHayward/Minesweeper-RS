@@ -106,10 +106,13 @@ impl Screen for Game {
                 self.current_time = time;
                 None
             }
-            Message::Back => Some(Task::perform(
-                async { MainMenu::build(config) },
-                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
-            )),
+            Message::Back => Some(
+                Task::perform(async { MainMenu::build(config) }, move |item| {
+                    Arc::new(Box::new(item) as Box<dyn Screen>)
+                })
+                .map(AppMessage::ChangeScreen)
+                .map(SuperMessage::App),
+            ),
             Message::SaveTime => {
                 let duration = self.current_time.duration_since(self.start_time);
                 let end_time = self.end_time.unwrap_or_else(SystemTime::now);
@@ -118,19 +121,21 @@ impl Screen for Game {
                     self.board.get_height(),
                     self.board.get_mine_count(),
                 );
-                Some(Task::perform(
-                    async move {
-                        Leaderboard::from_new_time(
-                            config,
-                            duration,
-                            end_time,
-                            (width, height, mines),
-                        )
-                    },
-                    move |item| {
-                        SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item))))
-                    },
-                ))
+                Some(
+                    Task::perform(
+                        async move {
+                            Leaderboard::from_new_time(
+                                config,
+                                duration,
+                                end_time,
+                                (width, height, mines),
+                            )
+                        },
+                        move |item| Arc::new(Box::new(item) as Box<dyn Screen>),
+                    )
+                    .map(AppMessage::ChangeScreen)
+                    .map(SuperMessage::App),
+                )
             }
         }
     }

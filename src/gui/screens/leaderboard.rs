@@ -88,10 +88,13 @@ impl Screen for Leaderboard {
         };
         let config = self.config.clone();
         match message {
-            Message::Back => Some(Task::perform(
-                async { MainMenu::build(config) },
-                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
-            )),
+            Message::Back => Some(
+                Task::perform(async { MainMenu::build(config) }, move |item| {
+                    Arc::new(Box::new(item) as Box<dyn Screen>)
+                })
+                .map(AppMessage::ChangeScreen)
+                .map(SuperMessage::App),
+            ),
         }
     }
 }

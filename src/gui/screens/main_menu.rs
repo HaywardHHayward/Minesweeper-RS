@@ -31,17 +31,27 @@ impl Screen for MainMenu {
         };
         let config = self.config.clone();
         match message {
-            Message::ToGameSelection => Some(Task::perform(
-                async { GameSelection::build(config) },
-                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
-            )),
-            Message::ToSettings => Some(Task::perform(
-                async { SettingsScreen::build(config) },
-                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
-            )),
-            Message::ToAbout => Some(Task::perform(async { About::build(config) }, move |item| {
-                SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item))))
-            })),
+            Message::ToGameSelection => Some(
+                Task::perform(async { GameSelection::build(config) }, move |item| {
+                    Arc::new(Box::new(item) as Box<dyn Screen>)
+                })
+                .map(AppMessage::ChangeScreen)
+                .map(SuperMessage::App),
+            ),
+            Message::ToSettings => Some(
+                Task::perform(async { SettingsScreen::build(config) }, move |item| {
+                    Arc::new(Box::new(item) as Box<dyn Screen>)
+                })
+                .map(AppMessage::ChangeScreen)
+                .map(SuperMessage::App),
+            ),
+            Message::ToAbout => Some(
+                Task::perform(async { About::build(config) }, move |item| {
+                    Arc::new(Box::new(item) as Box<dyn Screen>)
+                })
+                .map(AppMessage::ChangeScreen)
+                .map(SuperMessage::App),
+            ),
             Message::Quit => Some(Task::done(SuperMessage::App(AppMessage::CloseApp))),
         }
     }

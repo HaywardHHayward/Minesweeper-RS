@@ -70,10 +70,13 @@ impl Screen for CustomSetup {
         };
         let config = self.config.clone();
         match message {
-            Message::Back => Some(Task::perform(
-                async { GameSelection::build(config) },
-                move |item| SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item)))),
-            )),
+            Message::Back => Some(
+                Task::perform(async { GameSelection::build(config) }, move |item| {
+                    Arc::new(Box::new(item) as Box<dyn Screen>)
+                })
+                .map(AppMessage::ChangeScreen)
+                .map(SuperMessage::App),
+            ),
             Message::WidthChanged(new_value) => {
                 self.width_string = validate_numerical_input::<u8>(&new_value, 2);
                 None
@@ -125,12 +128,13 @@ impl Screen for CustomSetup {
                         return None;
                     }
                 };
-                Some(Task::perform(
-                    async move { Game::build(config, board) },
-                    move |item| {
-                        SuperMessage::App(AppMessage::ChangeScreen(Arc::new(Box::new(item))))
-                    },
-                ))
+                Some(
+                    Task::perform(async move { Game::build(config, board) }, move |item| {
+                        Arc::new(Box::new(item) as Box<dyn Screen>)
+                    })
+                    .map(AppMessage::ChangeScreen)
+                    .map(SuperMessage::App),
+                )
             }
         }
     }
