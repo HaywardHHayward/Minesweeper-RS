@@ -74,7 +74,7 @@ impl Screen for Application {
         };
         match message {
             AppMessage::ChangeScreen(builder) => {
-                self.screen = Arc::into_inner(builder).unwrap();
+                self.screen = Arc::into_inner(builder).expect("Failed to receive screen");
                 None
             }
             AppMessage::CloseApp => {
