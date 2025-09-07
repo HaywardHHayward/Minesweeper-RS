@@ -7,7 +7,7 @@
 use iced::{Element, Subscription, Task, widget as GuiWidget, widget::svg as GuiSvg};
 
 use super::{AppMessage, Leaderboard, MainMenu, Message as SuperMessage};
-use crate::{ArcLock, Board, BoardState, Cell, Config, GameTheme, Screen};
+use crate::{ArcLock, Board, BoardState, Cell, Config, GameTheme, Screen, core::cell};
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -283,26 +283,22 @@ impl Game {
                 self.exploded_mine()
             } else {
                 let adjacent_mines = cell.adjacent_mines().unwrap();
-                if adjacent_mines == 0 {
+                if let cell::AdjacentMines::Zero = adjacent_mines {
                     self.opened_cell()
                 } else {
                     let mut stack = GuiWidget::Stack::with_capacity(2);
                     stack = stack.push(self.opened_cell());
                     let color = match adjacent_mines {
-                        1 => iced::color!(0, 0, 255),
-                        2 => iced::color!(0, 127, 0),
-                        3 => iced::color!(255, 0, 0),
-                        4 => iced::color!(0, 0, 127),
-                        5 => iced::color!(127, 0, 0),
-                        6 => iced::color!(0, 127, 127),
-                        7 => iced::color!(255, 255, 255),
-                        8 => iced::color!(127, 127, 127),
-                        // SAFETY: The internal enum AdjacentMines (which is what
-                        // cell.adjacent_mines converts from) CANNOT
-                        // represent values outside 0-8, and we just checked
-                        // that adjacent_mines is not 0, so all other values are
-                        // unreachable.
-                        _ => unsafe { std::hint::unreachable_unchecked() },
+                        cell::AdjacentMines::One => iced::color!(0, 0, 255),
+                        cell::AdjacentMines::Two => iced::color!(0, 127, 0),
+                        cell::AdjacentMines::Three => iced::color!(255, 0, 0),
+                        cell::AdjacentMines::Four => iced::color!(0, 0, 127),
+                        cell::AdjacentMines::Five => iced::color!(127, 0, 0),
+                        cell::AdjacentMines::Six => iced::color!(0, 127, 127),
+                        cell::AdjacentMines::Seven => iced::color!(255, 255, 255),
+                        cell::AdjacentMines::Eight => iced::color!(127, 127, 127),
+                        // SAFETY: We already checked that `adjacent_mines` is not zero.
+                        cell::AdjacentMines::Zero => unsafe { std::hint::unreachable_unchecked() },
                     };
                     let text = GuiWidget::center(
                         GuiWidget::text!("{adjacent_mines}")

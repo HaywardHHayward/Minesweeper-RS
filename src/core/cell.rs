@@ -1,11 +1,14 @@
+use std::ops::{Add, AddAssign};
+
 #[derive(Clone, Debug)]
 pub struct Cell {
     open_state: OpenState,
     mine_state: MineState,
 }
 
-#[derive(Copy, Clone, Debug)]
-enum AdjacentMines {
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum AdjacentMines {
+    #[default]
     Zero = 0,
     One = 1,
     Two = 2,
@@ -15,6 +18,23 @@ enum AdjacentMines {
     Six = 6,
     Seven = 7,
     Eight = 8,
+}
+
+impl Add<u8> for AdjacentMines {
+    type Output = Option<AdjacentMines>;
+
+    fn add(self, rhs: u8) -> Self::Output {
+        let sum = u8::from(self) + rhs;
+        AdjacentMines::try_from(sum).ok()
+    }
+}
+
+impl AddAssign<u8> for AdjacentMines {
+    fn add_assign(&mut self, rhs: u8) {
+        if let Ok(new_value) = AdjacentMines::try_from(u8::from(*self) + rhs) {
+            *self = new_value;
+        }
+    }
 }
 
 impl From<AdjacentMines> for u8 {
@@ -39,6 +59,12 @@ impl TryFrom<u8> for AdjacentMines {
             8 => Ok(AdjacentMines::Eight),
             invalid_num => Err(invalid_num),
         }
+    }
+}
+
+impl std::fmt::Display for AdjacentMines {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", u8::from(*self))
     }
 }
 
@@ -92,9 +118,9 @@ impl Cell {
     pub fn increment_adjacent_mines(&mut self) {
         self.cell_transition(CellEvent::IncrementAdjacentMines);
     }
-    pub fn adjacent_mines(&self) -> Option<u8> {
-        if let MineState::Safe { adjacent_mines } = &self.mine_state {
-            Some(u8::from(*adjacent_mines))
+    pub fn adjacent_mines(&self) -> Option<AdjacentMines> {
+        if let MineState::Safe { adjacent_mines } = self.mine_state {
+            Some(adjacent_mines)
         } else {
             None
         }
@@ -122,9 +148,7 @@ impl Cell {
             ) => {
                 // This should always succeed, but better to be safe and only increment if it's
                 // less than 8
-                if let Ok(new_adjacent_mines) =
-                    AdjacentMines::try_from(u8::from(*adjacent_mines) + 1)
-                {
+                if let Some(new_adjacent_mines) = *adjacent_mines + 1 {
                     self.mine_state = MineState::Safe {
                         adjacent_mines: new_adjacent_mines,
                     };
@@ -150,7 +174,7 @@ mod testing {
         assert!(!cell.is_open());
         assert!(!cell.is_flagged());
         assert!(!cell.is_mine());
-        assert_eq!(cell.adjacent_mines(), Some(0));
+        assert_eq!(cell.adjacent_mines(), Some(AdjacentMines::Zero));
     }
     #[test]
     fn test_cell_open() {
@@ -205,17 +229,20 @@ mod testing {
         let mut cell = Cell::new();
         for num in 1..=8 {
             cell.increment_adjacent_mines();
-            assert_eq!(cell.adjacent_mines(), Some(num));
+            assert_eq!(
+                cell.adjacent_mines(),
+                Some(AdjacentMines::try_from(num).unwrap())
+            );
         }
         cell.increment_adjacent_mines();
-        assert_eq!(cell.adjacent_mines(), Some(8));
+        assert_eq!(cell.adjacent_mines(), Some(AdjacentMines::Eight));
     }
     #[test]
     fn test_cell_increment_adjacent_mines_on_opened() {
         let mut cell = Cell::new();
         cell.open();
         cell.increment_adjacent_mines();
-        assert_eq!(cell.adjacent_mines(), Some(0));
+        assert_eq!(cell.adjacent_mines(), Some(AdjacentMines::Zero));
     }
     #[test]
     fn test_cell_increment_adjacent_mines_on_mined() {

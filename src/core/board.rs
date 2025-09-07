@@ -5,7 +5,7 @@ use std::{
 
 use rand::prelude::*;
 
-use crate::core::cell::Cell;
+use crate::core::{cell, cell::Cell};
 
 #[derive(Copy, Clone, Debug)]
 pub enum BoardState {
@@ -167,7 +167,7 @@ impl Board {
             self.state = BoardState::Lost;
             return;
         }
-        if cell.adjacent_mines().unwrap() == 0 {
+        if let Some(cell::AdjacentMines::Zero) = cell.adjacent_mines() {
             let mut queue = self
                 .get_surrounding_coordinates(x, y)
                 .collect::<VecDeque<_>>();
@@ -186,7 +186,7 @@ impl Board {
                     .remove(&(surrounding_x, surrounding_y));
                 let cell = self.get_cell_mut(surrounding_x, surrounding_y).unwrap();
                 cell.open();
-                if cell.adjacent_mines().unwrap() == 0 {
+                if let Some(cell::AdjacentMines::Zero) = cell.adjacent_mines() {
                     for (surrounding_x, surrounding_y) in
                         self.get_surrounding_coordinates(surrounding_x, surrounding_y)
                     {
@@ -351,6 +351,8 @@ const fn coordinate_to_linear(x: u8, y: u8, width: NonZeroU8) -> usize {
 
 #[cfg(test)]
 mod testing {
+    use cell::AdjacentMines;
+
     use super::*;
     fn create_board(x: u8, y: u8, m: u16) -> Result<Board, BoardError> {
         Board::create_custom(
@@ -405,7 +407,7 @@ mod testing {
                 board.open_cell(x, y);
                 let cell = board.get_cell(x, y).unwrap();
                 assert!(cell.is_open());
-                assert_eq!(cell.adjacent_mines().unwrap(), 0);
+                assert_eq!(cell.adjacent_mines(), Some(AdjacentMines::Zero));
                 for (sur_x, sur_y) in board.get_surrounding_coordinates(x, y) {
                     assert!(!board.get_cell(sur_x, sur_y).unwrap().is_mine());
                 }
@@ -420,7 +422,7 @@ mod testing {
                 board.open_cell(x, y);
                 let cell = board.get_cell(x, y).unwrap();
                 assert!(cell.is_open());
-                assert_eq!(cell.adjacent_mines().unwrap(), 8);
+                assert_eq!(cell.adjacent_mines(), Some(AdjacentMines::Eight));
                 for (sur_x, sur_y) in board.get_surrounding_coordinates(x, y) {
                     assert!(board.get_cell(sur_x, sur_y).unwrap().is_mine());
                 }
