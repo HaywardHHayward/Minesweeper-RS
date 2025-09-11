@@ -160,6 +160,13 @@ impl MenuTheme {
     }
 }
 
+impl GameTheme {
+    pub fn mine_font(&self) -> iced::Font {
+        // TODO: use a better font for Classic
+        iced::Font::MONOSPACE
+    }
+}
+
 impl Display for GameTheme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
