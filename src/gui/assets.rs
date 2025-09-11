@@ -49,7 +49,7 @@ fn create_cache() -> Result<(), CacheError> {
 
 pub static ICON: &[u8] = include_bytes!("../../assets/Icon.qoi");
 
-macro_rules! create_assets {
+macro_rules! create_image_assets {
     ($([$name:ident, $extension:literal$(, $attr:meta)?]),*) => {
         $(
             $(#[$attr])?
@@ -58,14 +58,14 @@ macro_rules! create_assets {
 
                 use super::*;
                 pub static OPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
-                    let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/OpenedCell.", $extension)));
+                    let cache_result = get_data_from_cache(std::path::Path::new(concat!("images/",stringify!($name), "/OpenedCell.", $extension)));
                     match cache_result {
                         Ok(data) => data,
                         Err(CacheError::NotFound) => {
                             if let Err(e) = create_cache() {
                                 panic!("Failed to create cache: {e:?}");
                             }
-                            get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/OpenedCell.", $extension)))
+                            get_data_from_cache(std::path::Path::new(concat!("images/",stringify!($name), "/OpenedCell.", $extension)))
                                 .expect("Failed to read OpenedCell from cache")
                         }
                         Err(e) => panic!("Failed to read OpenedCell from cache: {e:?}"),
@@ -73,14 +73,14 @@ macro_rules! create_assets {
                 });
 
                 pub static UNOPENED_CELL: LazyLock<Vec<u8>> = LazyLock::new(|| {
-                    let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/UnopenedCell.", $extension)));
+                    let cache_result = get_data_from_cache(std::path::Path::new(concat!("images/",stringify!($name), "/UnopenedCell.", $extension)));
                     match cache_result {
                         Ok(data) => data,
                         Err(CacheError::NotFound) => {
                             if let Err(e) = create_cache() {
                                 panic!("Failed to create cache: {e:?}");
                             }
-                            get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/UnopenedCell.", $extension)))
+                            get_data_from_cache(std::path::Path::new(concat!("images/",stringify!($name), "/UnopenedCell.", $extension)))
                                 .expect("Failed to read UnopenedCell from cache")
                         }
                         Err(e) => panic!("Failed to read UnopenedCell from cache: {e:?}"),
@@ -88,14 +88,14 @@ macro_rules! create_assets {
                 });
 
                 pub static MINE: LazyLock<Vec<u8>> = LazyLock::new(|| {
-                    let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/Mine.", $extension)));
+                    let cache_result = get_data_from_cache(std::path::Path::new(concat!("images/",stringify!($name), "/Mine.", $extension)));
                     match cache_result {
                         Ok(data) => data,
                         Err(CacheError::NotFound) => {
                             if let Err(e) = create_cache() {
                                 panic!("Failed to create cache: {e:?}");
                             }
-                            get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/Mine.", $extension)))
+                            get_data_from_cache(std::path::Path::new(concat!("images/",stringify!($name), "/Mine.", $extension)))
                                 .expect("Failed to read Mine from cache")
                         }
                         Err(e) => panic!("Failed to read Mine from cache: {e:?}"),
@@ -103,14 +103,14 @@ macro_rules! create_assets {
                 });
 
                 pub static FLAG: LazyLock<Vec<u8>> = LazyLock::new(|| {
-                    let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/Flag.", $extension)));
+                    let cache_result = get_data_from_cache(std::path::Path::new(concat!("images/",stringify!($name), "/Flag.", $extension)));
                     match cache_result {
                         Ok(data) => data,
                         Err(CacheError::NotFound) => {
                             if let Err(e) = create_cache() {
                                 panic!("Failed to create cache: {e:?}");
                             }
-                            get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/Flag.", $extension)))
+                            get_data_from_cache(std::path::Path::new(concat!("images/",stringify!($name), "/Flag.", $extension)))
                                 .expect("Failed to read Flag from cache")
                         }
                         Err(e) => panic!("Failed to read Flag from cache: {e:?}"),
@@ -118,14 +118,14 @@ macro_rules! create_assets {
                 });
 
                 pub static INCORRECT_FLAG: LazyLock<Vec<u8>> = LazyLock::new(|| {
-                    let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/IncorrectFlag.", $extension)));
+                    let cache_result = get_data_from_cache(std::path::Path::new(concat!("images/",stringify!($name), "/IncorrectFlag.", $extension)));
                     match cache_result {
                         Ok(data) => data,
                         Err(CacheError::NotFound) => {
                             if let Err(e) = create_cache() {
                                 panic!("Failed to create cache: {e:?}");
                             }
-                            get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/IncorrectFlag.", $extension)))
+                            get_data_from_cache(std::path::Path::new(concat!("images/",stringify!($name), "/IncorrectFlag.", $extension)))
                                 .expect("Failed to read IncorrectFlag from cache")
                         }
                         Err(e) => panic!("Failed to read IncorrectFlag from cache: {e:?}"),
@@ -133,14 +133,14 @@ macro_rules! create_assets {
                 });
 
                 pub static EXPLODED_MINE: LazyLock<Vec<u8>> = LazyLock::new(|| {
-                    let cache_result = get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/ExplodedMine.", $extension)));
+                    let cache_result = get_data_from_cache(std::path::Path::new(concat!("images/",stringify!($name), "/ExplodedMine.", $extension)));
                     match cache_result {
                         Ok(data) => data,
                         Err(CacheError::NotFound) => {
                             if let Err(e) = create_cache() {
                                 panic!("Failed to create cache: {e:?}");
                             }
-                            get_data_from_cache(std::path::Path::new(concat!(stringify!($name), "/ExplodedMine.", $extension)))
+                            get_data_from_cache(std::path::Path::new(concat!("images/",stringify!($name), "/ExplodedMine.", $extension)))
                                 .expect("Failed to read ExplodedMine from cache")
                         }
                         Err(e) => panic!("Failed to read ExplodedMine from cache: {e:?}"),
@@ -151,7 +151,7 @@ macro_rules! create_assets {
     };
 }
 
-create_assets!(
+create_image_assets!(
     [simple_light, "svg"],
     [simple_dark, "svg"],
     [classic, "svg", cfg(feature = "non-free")]
