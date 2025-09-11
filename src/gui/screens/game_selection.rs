@@ -77,24 +77,24 @@ impl Screen for GameSelection {
 
         let beginner_button = menu_theme
             .button(
-                "Beginner (9x9, 10 mines)",
-                crate::gui::config::MenuButtonStyle::Primary,
+                menu_theme.text("Beginner (9x9, 10 mines)"),
+                crate::MenuButtonStyle::Primary,
             )
             .on_press(SuperMessage::GameSelection(Message::BeginnerSelected));
         let intermediate_button = menu_theme
             .button(
-                "Intermediate (16x16, 40 mines)",
-                crate::gui::config::MenuButtonStyle::Primary,
+                menu_theme.text("Intermediate (16x16, 40 mines)"),
+                crate::MenuButtonStyle::Primary,
             )
             .on_press(SuperMessage::GameSelection(Message::IntermediateSelected));
         let expert_button = menu_theme
             .button(
-                "Expert (30x16, 99 mines)",
-                crate::gui::config::MenuButtonStyle::Primary,
+                menu_theme.text("Expert (30x16, 99 mines)"),
+                crate::MenuButtonStyle::Primary,
             )
             .on_press(SuperMessage::GameSelection(Message::ExpertSelected));
         let custom_button = menu_theme
-            .button("Custom", crate::gui::config::MenuButtonStyle::Primary)
+            .button(menu_theme.text("Custom"), crate::MenuButtonStyle::Primary)
             .on_press(SuperMessage::GameSelection(Message::CustomSelected));
 
         let buttons = GuiWidget::column![
@@ -107,7 +107,7 @@ impl Screen for GameSelection {
         .align_x(iced::Center);
 
         let back_button = menu_theme
-            .button("Back", crate::gui::config::MenuButtonStyle::Secondary)
+            .button(menu_theme.text("Back"), crate::MenuButtonStyle::Secondary)
             .on_press(SuperMessage::GameSelection(Message::Back));
         let content = GuiWidget::column![buttons, back_button]
             .align_x(iced::Center)

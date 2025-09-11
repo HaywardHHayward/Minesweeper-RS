@@ -149,6 +149,15 @@ impl MenuTheme {
             }),
         }
     }
+    pub fn default_font(&self) -> iced::Font {
+        match self {
+            MenuTheme::Light | MenuTheme::Dark => iced::Font::default(),
+            MenuTheme::NineX => iced::Font {
+                weight: iced::font::Weight::Light,
+                ..iced::Font::with_name("Microsoft Sans Serif")
+            },
+        }
+    }
 }
 
 impl Display for GameTheme {

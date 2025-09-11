@@ -3,10 +3,7 @@
 use iced::{Element, Task, widget as GuiWidget};
 
 use super::{AppMessage, MainMenu, Message as SuperMessage};
-use crate::{
-    ArcLock, Config, Screen,
-    gui::config::{GameTheme, MenuTheme},
-};
+use crate::{ArcLock, Config, GameTheme, MenuTheme, Screen};
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -87,23 +84,27 @@ impl Screen for SettingsScreen {
         }
     }
     fn view(&self) -> Element<'_, SuperMessage> {
-        let menu_theme_text = GuiWidget::text("Menu Theme:");
+        let menu_theme = &self.config.read().unwrap().menu_theme;
+
+        let menu_theme_text = menu_theme.text("Menu Theme:");
         let menu_theme_picker =
             GuiWidget::pick_list(MenuTheme::ALL, self.menu_theme.to_owned(), |theme| {
                 SuperMessage::SettingsScreen(Message::MenuThemeChanged(theme))
             })
+            .font(menu_theme.default_font())
             .placeholder(self.config.read().unwrap().menu_theme.to_string());
-        let menu_theme = GuiWidget::row![menu_theme_text, menu_theme_picker].spacing(10);
+        let menu_theme_row = GuiWidget::row![menu_theme_text, menu_theme_picker].spacing(10);
 
-        let game_theme_text = GuiWidget::text("Game Theme:");
+        let game_theme_text = menu_theme.text("Game Theme:");
         let game_theme_picker =
             GuiWidget::pick_list(GameTheme::ALL, self.game_theme.to_owned(), |theme| {
                 SuperMessage::SettingsScreen(Message::GameThemeChanged(theme))
             })
+            .font(menu_theme.default_font())
             .placeholder(self.config.read().unwrap().game_theme.to_string());
         let game_theme = GuiWidget::row![game_theme_text, game_theme_picker].spacing(10);
 
-        let scale_factor_text = GuiWidget::text("Scale Factor:");
+        let scale_factor_text = menu_theme.text("Scale Factor:");
         let scale_factor_slider = GuiWidget::slider(
             0.25..=3.0,
             self.scale_factor
@@ -111,7 +112,7 @@ impl Screen for SettingsScreen {
             |value| SuperMessage::SettingsScreen(Message::ScaleFactorChanged(value)),
         )
         .step(0.25);
-        let scale_factor_value = GuiWidget::text(format!(
+        let scale_factor_value = menu_theme.text(format!(
             "{:.2}x",
             self.scale_factor
                 .unwrap_or_else(|| self.config.read().unwrap().scale_factor)
@@ -119,17 +120,23 @@ impl Screen for SettingsScreen {
         let scale_factor =
             GuiWidget::row![scale_factor_text, scale_factor_slider, scale_factor_value].spacing(10);
 
-        let settings_column = GuiWidget::column![menu_theme, game_theme, scale_factor].spacing(10);
+        let settings_column =
+            GuiWidget::column![menu_theme_row, game_theme, scale_factor].spacing(10);
 
-        let menu_theme = &self.config.read().unwrap().menu_theme;
         let apply_button = menu_theme
-            .button("Apply Changes", crate::MenuButtonStyle::Primary)
+            .button(
+                menu_theme.text("Apply Changes"),
+                crate::MenuButtonStyle::Primary,
+            )
             .on_press(SuperMessage::SettingsScreen(Message::ApplyChanges));
         let reset_button = menu_theme
-            .button("Reset Changes", crate::MenuButtonStyle::Danger)
+            .button(
+                menu_theme.text("Reset Changes"),
+                crate::MenuButtonStyle::Danger,
+            )
             .on_press(SuperMessage::SettingsScreen(Message::ResetChanges));
         let back_button = menu_theme
-            .button("Back", crate::MenuButtonStyle::Secondary)
+            .button(menu_theme.text("Back"), crate::MenuButtonStyle::Secondary)
             .on_press(SuperMessage::SettingsScreen(Message::Back));
 
         let buttons = GuiWidget::row![apply_button, reset_button, back_button].spacing(10);

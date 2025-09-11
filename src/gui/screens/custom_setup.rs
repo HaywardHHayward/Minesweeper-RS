@@ -139,17 +139,22 @@ impl Screen for CustomSetup {
         }
     }
     fn view(&self) -> Element<'_, SuperMessage> {
-        let width_text = GuiWidget::text("Width:");
+        let menu_theme = &self.config.read().unwrap().menu_theme;
+
+        let width_text = menu_theme.text("Width:");
         let width_input = GuiWidget::text_input("", &self.width_string)
-            .on_input(|new_value| SuperMessage::CustomSetup(Message::WidthChanged(new_value)));
+            .on_input(|new_value| SuperMessage::CustomSetup(Message::WidthChanged(new_value)))
+            .font(menu_theme.default_font());
 
-        let height_text = GuiWidget::text("Height:");
+        let height_text = menu_theme.text("Height:");
         let height_input = GuiWidget::text_input("", &self.height_string)
-            .on_input(|new_value| SuperMessage::CustomSetup(Message::HeightChanged(new_value)));
+            .on_input(|new_value| SuperMessage::CustomSetup(Message::HeightChanged(new_value)))
+            .font(menu_theme.default_font());
 
-        let mines_text = GuiWidget::text("Mines:");
+        let mines_text = menu_theme.text("Mines:");
         let mines_input = GuiWidget::text_input("", &self.mines_string)
-            .on_input(|new_value| SuperMessage::CustomSetup(Message::MinesChanged(new_value)));
+            .on_input(|new_value| SuperMessage::CustomSetup(Message::MinesChanged(new_value)))
+            .font(menu_theme.default_font());
 
         let inputs = GuiWidget::column![width_input, height_input, mines_input]
             .spacing(10)
@@ -163,20 +168,18 @@ impl Screen for CustomSetup {
             .spacing(10)
             .align_y(iced::Center);
 
-        let menu_theme = &self.config.read().unwrap().menu_theme;
-
         let submit_button = menu_theme
-            .button("Submit", crate::gui::config::MenuButtonStyle::Primary)
+            .button(menu_theme.text("Submit"), crate::MenuButtonStyle::Primary)
             .on_press(SuperMessage::CustomSetup(Message::Submit));
         let back_button = menu_theme
-            .button("Back", crate::MenuButtonStyle::Secondary)
+            .button(menu_theme.text("Back"), crate::MenuButtonStyle::Secondary)
             .on_press(SuperMessage::CustomSetup(Message::Back));
 
         let buttons = GuiWidget::row![submit_button, back_button]
             .spacing(10)
             .align_y(iced::Center);
 
-        let error_message = GuiWidget::text(self.error_message.as_deref().unwrap_or(""));
+        let error_message = menu_theme.text(self.error_message.as_deref().unwrap_or(""));
 
         let content = GuiWidget::column![
             input_content,

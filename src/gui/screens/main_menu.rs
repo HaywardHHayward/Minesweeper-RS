@@ -56,23 +56,26 @@ impl Screen for MainMenu {
         }
     }
     fn view(&self) -> Element<'_, SuperMessage> {
-        let title_text = GuiWidget::text("Minesweeper").size(50);
-        let author_text = GuiWidget::text("by Hayward H. Hayward").size(20);
-        let main_title = GuiWidget::column![title_text, author_text].align_x(iced::Center);
-
         let menu_theme = &self.config.read().unwrap().menu_theme;
 
+        let title_text = menu_theme.text("Minesweeper").size(50);
+        let author_text = menu_theme.text("by Hayward H. Hayward").size(20);
+        let main_title = GuiWidget::column![title_text, author_text].align_x(iced::Center);
+
         let play_button = menu_theme
-            .button("Play", crate::gui::config::MenuButtonStyle::Primary)
+            .button(menu_theme.text("Play"), crate::MenuButtonStyle::Primary)
             .on_press(SuperMessage::MainMenu(Message::ToGameSelection));
         let settings_button = menu_theme
-            .button("Settings", crate::gui::config::MenuButtonStyle::Secondary)
+            .button(
+                menu_theme.text("Settings"),
+                crate::MenuButtonStyle::Secondary,
+            )
             .on_press(SuperMessage::MainMenu(Message::ToSettings));
         let about_button = menu_theme
-            .button("About", crate::gui::config::MenuButtonStyle::Secondary)
+            .button(menu_theme.text("About"), crate::MenuButtonStyle::Secondary)
             .on_press(SuperMessage::MainMenu(Message::ToAbout));
         let quit_button = menu_theme
-            .button("Quit", crate::gui::config::MenuButtonStyle::Danger)
+            .button(menu_theme.text("Quit"), crate::MenuButtonStyle::Danger)
             .on_press(SuperMessage::MainMenu(Message::Quit));
 
         let buttons = GuiWidget::column![play_button, settings_button, about_button, quit_button]

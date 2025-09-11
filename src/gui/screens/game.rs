@@ -228,7 +228,7 @@ impl Game {
     pub fn end_of_screen(&self) -> Option<Element<'_, SuperMessage>> {
         let menu_theme = &self.config.read().unwrap().menu_theme;
 
-        let text = GuiWidget::text(match self.board.get_state() {
+        let text = menu_theme.text(match self.board.get_state() {
             BoardState::Won => "You found all the mines. You win!",
             BoardState::Lost => "You hit a mine! You lose!",
             BoardState::InProgress => "",
@@ -236,11 +236,17 @@ impl Game {
 
         let possible_save_time = matches!(self.board.get_state(), BoardState::Won).then(|| {
             menu_theme
-                .button("Save Time", crate::MenuButtonStyle::Primary)
+                .button(
+                    menu_theme.text("Save Time"),
+                    crate::MenuButtonStyle::Primary,
+                )
                 .on_press(SuperMessage::Game(Message::SaveTime))
         });
         let return_button = menu_theme
-            .button("Return to main menu", crate::MenuButtonStyle::Secondary)
+            .button(
+                menu_theme.text("Return to main menu"),
+                crate::MenuButtonStyle::Secondary,
+            )
             .on_press(SuperMessage::Game(Message::Back));
         let buttons = if let Some(save_time_button) = possible_save_time {
             GuiWidget::row![save_time_button, return_button]

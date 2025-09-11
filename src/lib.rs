@@ -5,6 +5,7 @@ mod gui;
 pub use core::{board::*, cell::*};
 
 pub use gui::{
-    Application, ArcLock, Screen, assets, config::*, scale_factor, subscription, theme, update,
-    view,
+    Application, ArcLock, Screen, assets,
+    config::{Config, GameTheme, MenuButtonStyle, MenuTheme},
+    scale_factor, subscription, theme, update, view,
 };
