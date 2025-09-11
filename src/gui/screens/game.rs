@@ -311,6 +311,7 @@ impl Game {
                         // SAFETY: We already checked that `adjacent_mines` is not zero.
                         cell::AdjacentMines::Zero => unsafe { std::hint::unreachable_unchecked() },
                     };
+                    // TODO: Replace this with a different font at some point.
                     let text = GuiWidget::center(
                         GuiWidget::text!("{adjacent_mines}")
                             .size(14)
