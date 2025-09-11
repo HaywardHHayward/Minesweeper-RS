@@ -36,6 +36,7 @@ pub enum MenuTheme {
     NineX,
 }
 
+#[derive(Debug)]
 pub enum MenuButtonStyle {
     Primary,
     Secondary,
@@ -134,6 +135,18 @@ impl MenuTheme {
                     })
                     .padding(0)
             }
+        }
+    }
+    pub fn text<'a, T: 'a + GuiWidget::text::Catalog>(
+        &self,
+        text: impl GuiWidget::text::IntoFragment<'a>,
+    ) -> GuiWidget::Text<'a, T> {
+        match self {
+            MenuTheme::Light | MenuTheme::Dark => GuiWidget::Text::new(text),
+            MenuTheme::NineX => GuiWidget::Text::new(text).font(iced::Font {
+                weight: iced::font::Weight::Light,
+                ..iced::Font::with_name("Microsoft Sans Serif")
+            }),
         }
     }
 }
