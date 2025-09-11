@@ -8,7 +8,9 @@ pub fn main() -> iced::Result {
             ..Default::default()
         })
         .window(iced::window::Settings {
-            icon: iced::window::icon::from_file_data(assets::ICON, None).ok(),
+            icon: iced::window::icon::from_file_data(assets::ICON, None)
+                .inspect_err(|err| eprintln!("Failed to load icon: {err}"))
+                .ok(),
             exit_on_close_request: false,
             ..Default::default()
         })
