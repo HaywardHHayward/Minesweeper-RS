@@ -97,10 +97,10 @@ impl MenuTheme {
                     snap: true,
                 };
                 let content = GuiWidget::container(GuiWidget::row![
-                    GuiWidget::vertical_rule(2).style(move |_| rule_style),
+                    GuiWidget::rule::vertical(2).style(move |_| rule_style),
                     GuiWidget::column![
-                        GuiWidget::horizontal_rule(2).style(move |_| rule_style),
-                        GuiWidget::container(element).padding([0, 12])
+                        GuiWidget::rule::horizontal(2).style(move |_| rule_style),
+                        GuiWidget::center_y(element).padding([0, 12])
                     ]
                 ])
                 .center_y(23)
@@ -143,17 +143,19 @@ impl MenuTheme {
     ) -> GuiWidget::Text<'a, T> {
         match self {
             MenuTheme::Light | MenuTheme::Dark => GuiWidget::Text::new(text),
-            MenuTheme::NineX => GuiWidget::Text::new(text).font(iced::Font {
-                weight: iced::font::Weight::Light,
-                ..iced::Font::with_name("Microsoft Sans Serif")
-            }),
+            MenuTheme::NineX => GuiWidget::Text::new(text)
+                .font(iced::Font {
+                    weight: iced::font::Weight::Normal,
+                    ..iced::Font::with_name("Microsoft Sans Serif")
+                })
+                .size(11),
         }
     }
     pub fn default_font(&self) -> iced::Font {
         match self {
             MenuTheme::Light | MenuTheme::Dark => iced::Font::default(),
             MenuTheme::NineX => iced::Font {
-                weight: iced::font::Weight::Light,
+                weight: iced::font::Weight::Normal,
                 ..iced::Font::with_name("Microsoft Sans Serif")
             },
         }

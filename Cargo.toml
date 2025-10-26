@@ -22,17 +22,17 @@ non-free = []
 [dependencies]
 thiserror = "2"
 rand = "0.9"
-iced = { version = "0.14.0-dev", git = "https://github.com/iced-rs/iced.git", features = ["image", "tokio", "svg"] }
+iced = { version = "0.14.0-dev", git = "https://github.com/iced-rs/iced.git", features = ["image", "tokio", "svg"], rev = "d560816" }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_yml = "0.0.12"
 directories = "6.0"
-zip = "5.0"
+zip = "6.0"
 tinyvec = "1.10"
 ciborium = "0.2"
 whoami = "1.6.1"
 
 [build-dependencies]
-zip = "5.0"
+zip = "6.0.0"
 walkdir = "2.5"
 
 [dev-dependencies]

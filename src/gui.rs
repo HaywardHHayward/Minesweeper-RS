@@ -86,8 +86,8 @@ impl Screen for Application {
                 config.save(&config_path);
                 Some(iced::exit())
             }
-            AppMessage::NextFocus => Some(iced::widget::focus_next()),
-            AppMessage::PreviousFocus => Some(iced::widget::focus_previous()),
+            AppMessage::NextFocus => Some(iced::widget::operation::focus_next()),
+            AppMessage::PreviousFocus => Some(iced::widget::operation::focus_previous()),
         }
     }
     fn view(&self) -> Element<'_, Message> {
@@ -109,8 +109,8 @@ impl Screen for Application {
             _ => None,
         });
         let app_subscription = Subscription::batch([close_subscription, change_focus_subscription]);
-        if let Some(sub_subscription) = self.screen.subscription() {
-            Some(Subscription::batch([app_subscription, sub_subscription]))
+        if let Some(screen_subscription) = self.screen.subscription() {
+            Some(Subscription::batch([app_subscription, screen_subscription]))
         } else {
             Some(app_subscription)
         }

@@ -183,7 +183,7 @@ impl Screen for CustomSetup {
 
         let content = GuiWidget::column![
             input_content,
-            GuiWidget::vertical_space().height(10),
+            GuiWidget::space().height(10),
             error_message,
             buttons
         ]
