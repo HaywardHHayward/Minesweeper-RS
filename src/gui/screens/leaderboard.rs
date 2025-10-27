@@ -89,6 +89,32 @@ impl Leaderboard {
             new_entry: Some(new_entry),
         }
     }
+    fn entry_element(&self, entry: &LeaderboardEntry) -> Element<'_, SuperMessage> {
+        let font = self.config.read().unwrap().menu_theme.default_font();
+        let name = GuiWidget::text(entry.name.clone()).font(font);
+        let time_string = if entry.time.num_seconds() < 60 {
+            format!(
+                "{}.{:03}",
+                entry.time.num_seconds(),
+                entry.time.subsec_millis()
+            )
+        } else {
+            format!(
+                "{}:{:02}.{:03}",
+                entry.time.num_minutes(),
+                entry.time.num_seconds() % 60,
+                entry.time.subsec_millis()
+            )
+        };
+        let time = GuiWidget::text(time_string).font(font);
+        let local_date = entry.completion_date.with_timezone(&chrono::Local);
+        let date_string = local_date.format("%v, %I:%M%p").to_string();
+        let date = GuiWidget::text(date_string).font(font);
+        GuiWidget::row![name, time, date]
+            .spacing(20)
+            .align_y(iced::Alignment::Center)
+            .into()
+    }
 }
 
 impl Screen for Leaderboard {
@@ -112,5 +138,38 @@ impl Screen for Leaderboard {
                 )
             }
         }
+    }
+    fn view(&self) -> Element<'_, SuperMessage> {
+        let config = self.config.read().unwrap();
+        let menu_theme = &config.menu_theme;
+
+        let mut entries = self.entries.clone();
+        // if let Some(new_entry) = &self.new_entry {
+        //     entries.push(new_entry.clone());
+        // }
+        entries.sort_by_key(|entry| entry.time);
+        let entry_elements = entries
+            .into_iter()
+            .map(|entry| self.entry_element(&entry))
+            .collect::<Vec<_>>();
+        let entries_column = GuiWidget::column(entry_elements)
+            .spacing(10)
+            .height(iced::Fill)
+            .width(iced::Fill);
+        let entries_content = GuiWidget::container(GuiWidget::scrollable(entries_column))
+            .padding(10)
+            .height(iced::Fill)
+            .width(iced::Fill)
+            .style(GuiWidget::container::bordered_box);
+
+        let back_button = menu_theme
+            .button(menu_theme.text("Back"), crate::MenuButtonStyle::Secondary)
+            .on_press(SuperMessage::Leaderboard(Message::Back));
+
+        let content = GuiWidget::column![entries_content, back_button]
+            .spacing(20)
+            .align_x(iced::Alignment::Center);
+
+        GuiWidget::center(content).padding(10).into()
     }
 }
