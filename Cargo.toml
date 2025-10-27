@@ -30,6 +30,7 @@ zip = "6.0"
 tinyvec = "1.10"
 ciborium = "0.2"
 whoami = "1.6.1"
+chrono = { version = "0.4.42", features = ["serde"] }
 
 [build-dependencies]
 zip = "6.0.0"

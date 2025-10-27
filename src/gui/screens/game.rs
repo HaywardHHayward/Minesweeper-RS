@@ -115,7 +115,7 @@ impl Screen for Game {
             ),
             Message::SaveTime => {
                 let duration = self.current_time.duration_since(self.start_time);
-                let end_time = self.end_time.unwrap_or_else(SystemTime::now);
+                let end_time = chrono::Utc::now();
                 let (width, height, mines) = (
                     self.board.get_width(),
                     self.board.get_height(),
@@ -126,7 +126,7 @@ impl Screen for Game {
                         async move {
                             Leaderboard::from_new_time(
                                 config,
-                                duration,
+                                chrono::TimeDelta::from_std(duration).unwrap(),
                                 end_time,
                                 (width, height, mines),
                             )

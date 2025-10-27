@@ -1,9 +1,7 @@
-﻿use std::{
-    sync::Arc,
-    time::{Duration, SystemTime},
-};
+﻿use std::{default, sync::Arc};
 
-use iced::Task;
+use chrono::{DateTime, TimeDelta};
+use iced::{Element, Task, widget as GuiWidget};
 
 use super::{AppMessage, MainMenu, Message as SuperMessage};
 use crate::{Application, ArcLock, Config, Screen};
@@ -14,11 +12,12 @@ pub struct Leaderboard {
     new_entry: Option<LeaderboardEntry>,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 struct LeaderboardEntry {
     name: String,
-    time: Duration,
-    completion_time: SystemTime,
+    time: TimeDelta,
+    #[serde(with = "chrono::serde::ts_seconds")]
+    completion_date: DateTime<chrono::Utc>,
     width: u8,
     height: u8,
     mines: u16,
@@ -58,25 +57,29 @@ impl Leaderboard {
     }
     pub fn from_new_time(
         config: ArcLock<Config>,
-        time: Duration,
-        completion_time: SystemTime,
+        time: TimeDelta,
+        completion_date: DateTime<chrono::Utc>,
         (width, height, mines): (u8, u8, u16),
     ) -> Self {
-        let entries = Self::load_entries().unwrap_or_else(|err| {
+        let mut entries = Self::load_entries().unwrap_or_else(|err| {
             eprintln!("Failed to load leaderboard: {err}");
             Vec::new()
         });
+        // TODO: This will add new entry into entries for now whilst I design a way to
+        // modify entries before having them inserted into the master list
+        let new_entry = LeaderboardEntry {
+            name: whoami::realname(),
+            time,
+            completion_date,
+            width,
+            height,
+            mines,
+        };
+        entries.push(new_entry.clone());
         Self {
             config,
             entries,
-            new_entry: Some(LeaderboardEntry {
-                name: whoami::realname(),
-                time,
-                completion_time,
-                width,
-                height,
-                mines,
-            }),
+            new_entry: Some(new_entry),
         }
     }
 }
