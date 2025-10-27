@@ -82,7 +82,12 @@ impl Screen for Application {
                     eprintln!("Failed to clear cache: {e}");
                 });
                 let config = self.config.read().unwrap();
-                let config_path = Application::app_dirs().config_dir().join("config.yaml");
+                let config_dir_path = Application::app_dirs().config_dir().to_path_buf();
+                if !config_dir_path.exists() {
+                    std::fs::create_dir_all(&config_dir_path)
+                        .expect("Unable to create config directory");
+                }
+                let config_path = config_dir_path.join("config.yaml");
                 config.save(&config_path);
                 Some(iced::exit())
             }
@@ -133,11 +138,10 @@ impl Application {
         Ok(())
     }
     pub fn create() -> Self {
-        let config_dir = Application::app_dirs().config_dir().to_path_buf();
-        if !config_dir.exists() {
-            std::fs::create_dir_all(&config_dir).expect("Failed to create config directory");
-        }
-        let config_path = config_dir.join("config.yaml");
+        let config_path = Application::app_dirs()
+            .config_dir()
+            .join("config.yaml")
+            .to_path_buf();
         let config = if config_path.exists() {
             config::Config::load(&config_path).unwrap_or_else(|_| {
                 // Placeholder for proper error handling, log it for now and use default config,
@@ -148,10 +152,7 @@ impl Application {
                 config
             })
         } else {
-            // If the config file does not exist, create a default config and save it
-            let config = config::Config::default();
-            config.save(&config_path);
-            config
+            config::Config::default()
         };
         let config = Arc::new(RwLock::new(config));
         Application {

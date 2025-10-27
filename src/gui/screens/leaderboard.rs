@@ -30,7 +30,10 @@ pub enum Message {
 
 impl Leaderboard {
     fn load_entries() -> Result<Vec<LeaderboardEntry>, Box<dyn std::error::Error>> {
-        let path = Application::app_dirs().data_dir().join("leaderboard");
+        let path = Application::app_dirs()
+            .data_dir()
+            .join("leaderboard")
+            .to_path_buf();
         if !path.exists() {
             return Ok(Vec::new());
         }
@@ -39,7 +42,11 @@ impl Leaderboard {
         Ok(data)
     }
     fn save_entries(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let path = Application::app_dirs().data_dir().join("leaderboard");
+        let data_dir = Application::app_dirs().data_dir().to_path_buf();
+        if !data_dir.exists() {
+            std::fs::create_dir_all(&data_dir).expect("Unable to create data directory");
+        }
+        let path = data_dir.join("leaderboard");
         let file = std::fs::File::create(path)?;
         ciborium::into_writer(&self.entries, file)?;
         Ok(())
@@ -91,13 +98,19 @@ impl Screen for Leaderboard {
         };
         let config = self.config.clone();
         match message {
-            Message::Back => Some(
-                Task::perform(async { MainMenu::build(config) }, move |item| {
-                    Arc::new(Box::new(item) as Box<dyn Screen>)
-                })
-                .map(AppMessage::ChangeScreen)
-                .map(SuperMessage::App),
-            ),
+            Message::Back => {
+                let saving_result = self.save_entries();
+                if let Err(err) = saving_result {
+                    eprintln!("Failed to save leaderboard: {err}");
+                };
+                Some(
+                    Task::perform(async { MainMenu::build(config) }, move |item| {
+                        Arc::new(Box::new(item) as Box<dyn Screen>)
+                    })
+                    .map(AppMessage::ChangeScreen)
+                    .map(SuperMessage::App),
+                )
+            }
         }
     }
 }
