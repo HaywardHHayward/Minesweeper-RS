@@ -1,7 +1,7 @@
-﻿use std::{default, sync::Arc};
+﻿use std::sync::Arc;
 
 use chrono::{DateTime, TimeDelta};
-use iced::{Element, Task, widget as GuiWidget};
+use iced::{widget as GuiWidget, Element, Task};
 
 use super::{AppMessage, MainMenu, Message as SuperMessage};
 use crate::{Application, ArcLock, Config, Screen};
@@ -49,6 +49,16 @@ impl Leaderboard {
         let path = data_dir.join("leaderboard");
         let file = std::fs::File::create(path)?;
         ciborium::into_writer(&self.entries, file)?;
+        Ok(())
+    }
+    pub fn delete_entries() -> Result<(), Box<dyn std::error::Error>> {
+        let path = Application::app_dirs()
+            .data_dir()
+            .join("leaderboard")
+            .to_path_buf();
+        if path.exists() {
+            std::fs::remove_file(path)?;
+        }
         Ok(())
     }
     pub fn from_menu(config: ArcLock<Config>) -> Self {

@@ -2,7 +2,7 @@
 
 use iced::{Element, Task, widget as GuiWidget};
 
-use super::{AppMessage, MainMenu, Message as SuperMessage};
+use super::{AppMessage, Leaderboard, MainMenu, Message as SuperMessage};
 use crate::{ArcLock, Config, GameTheme, MenuTheme, Screen};
 
 #[derive(Debug, Clone)]
@@ -13,6 +13,14 @@ pub enum Message {
     ScaleFactorChanged(f32),
     ApplyChanges,
     ResetChanges,
+    LeaderboardReset(LeaderboardReset),
+}
+
+#[derive(Debug, Clone)]
+pub enum LeaderboardReset {
+    Prompt,
+    Confirm,
+    Cancel,
 }
 
 #[derive(Debug)]
@@ -21,6 +29,7 @@ pub struct SettingsScreen {
     menu_theme: Option<MenuTheme>,
     game_theme: Option<GameTheme>,
     scale_factor: Option<f32>,
+    showing_confirmation: bool,
 }
 
 impl SettingsScreen {
@@ -30,6 +39,7 @@ impl SettingsScreen {
             menu_theme: None,
             game_theme: None,
             scale_factor: None,
+            showing_confirmation: false,
         }
     }
 }
@@ -81,10 +91,54 @@ impl Screen for SettingsScreen {
                 self.scale_factor = None;
                 None
             }
+            Message::LeaderboardReset(action) => match action {
+                LeaderboardReset::Prompt => {
+                    self.showing_confirmation = true;
+                    None
+                }
+                LeaderboardReset::Confirm => {
+                    self.showing_confirmation = false;
+                    if let Err(error) = Leaderboard::delete_entries() {
+                        eprintln!("Failed to reset leaderboard: {error}");
+                    }
+                    None
+                }
+                LeaderboardReset::Cancel => {
+                    self.showing_confirmation = false;
+                    None
+                }
+            },
         }
     }
     fn view(&self) -> Element<'_, SuperMessage> {
         let menu_theme = &self.config.read().unwrap().menu_theme;
+
+        let popup_window = if self.showing_confirmation {
+            let confirmation_text = menu_theme.text(
+                "Are you sure you want to reset the leaderboard? This action cannot be undone.",
+            );
+            let confirm_button = menu_theme
+                .button(menu_theme.text("Confirm"), crate::MenuButtonStyle::Danger)
+                .on_press(SuperMessage::SettingsScreen(Message::LeaderboardReset(
+                    LeaderboardReset::Confirm,
+                )));
+            let cancel_button = menu_theme
+                .button(menu_theme.text("Cancel"), crate::MenuButtonStyle::Secondary)
+                .on_press(SuperMessage::SettingsScreen(Message::LeaderboardReset(
+                    LeaderboardReset::Cancel,
+                )));
+            let buttons = GuiWidget::row![confirm_button, cancel_button].spacing(10);
+            let content = GuiWidget::column![confirmation_text, buttons]
+                .spacing(20)
+                .align_x(iced::Center);
+            Some(GuiWidget::opaque(
+                GuiWidget::container(content)
+                    .padding(20)
+                    .style(GuiWidget::container::bordered_box),
+            ))
+        } else {
+            None
+        };
 
         let menu_theme_text = menu_theme.text("Menu Theme:");
         let menu_theme_picker =
@@ -120,8 +174,22 @@ impl Screen for SettingsScreen {
         let scale_factor =
             GuiWidget::row![scale_factor_text, scale_factor_slider, scale_factor_value].spacing(10);
 
-        let settings_column =
-            GuiWidget::column![menu_theme_row, game_theme, scale_factor].spacing(10);
+        let reset_leaderboard_button = menu_theme
+            .button(
+                menu_theme.text("Reset Leaderboard"),
+                crate::MenuButtonStyle::Danger,
+            )
+            .on_press(SuperMessage::SettingsScreen(Message::LeaderboardReset(
+                LeaderboardReset::Prompt,
+            )));
+
+        let settings_column = GuiWidget::column![
+            menu_theme_row,
+            game_theme,
+            scale_factor,
+            reset_leaderboard_button
+        ]
+        .spacing(10);
 
         let apply_button = menu_theme
             .button(
@@ -141,11 +209,19 @@ impl Screen for SettingsScreen {
 
         let buttons = GuiWidget::row![apply_button, reset_button, back_button].spacing(10);
 
-        let content = GuiWidget::column![settings_column, buttons]
+        let settings_content = GuiWidget::column![settings_column, buttons]
             .width(iced::Shrink)
             .align_x(iced::Center)
             .spacing(20);
 
-        GuiWidget::center(content).into()
+        if let Some(popup) = popup_window {
+            GuiWidget::stack![
+                GuiWidget::center(settings_content),
+                GuiWidget::center(popup),
+            ]
+            .into()
+        } else {
+            GuiWidget::center(settings_content).into()
+        }
     }
 }
