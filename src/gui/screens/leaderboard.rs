@@ -1,26 +1,62 @@
-﻿use std::sync::Arc;
+﻿use std::{collections::BTreeSet, sync::Arc};
 
 use chrono::{DateTime, TimeDelta};
-use iced::{widget as GuiWidget, Element, Task};
+use iced::{Element, Task, widget as GuiWidget};
 
 use super::{AppMessage, MainMenu, Message as SuperMessage};
 use crate::{Application, ArcLock, Config, Screen};
 #[derive(Debug)]
 pub struct Leaderboard {
     config: ArcLock<Config>,
-    entries: Vec<LeaderboardEntry>,
+    entries: BTreeSet<LeaderboardEntry>,
     new_entry: Option<LeaderboardEntry>,
+    current_tab: Tab,
 }
 
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug)]
+pub enum Tab {
+    All,
+    Beginner,
+    Intermediate,
+    Expert,
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 struct LeaderboardEntry {
+    #[serde(rename = "n")]
     name: String,
+    #[serde(rename = "t")]
     time: TimeDelta,
-    #[serde(with = "chrono::serde::ts_seconds")]
+    #[serde(with = "chrono::serde::ts_seconds", rename = "d")]
     completion_date: DateTime<chrono::Utc>,
+    #[serde(rename = "w")]
     width: u8,
+    #[serde(rename = "h")]
     height: u8,
+    #[serde(rename = "m")]
     mines: u16,
+}
+
+impl PartialOrd for LeaderboardEntry {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for LeaderboardEntry {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // Sorts by time (descending), then by board size + mines (ascending), then by
+        // completion date (descending), then by name (ascending)
+        other
+            .time
+            .cmp(&self.time)
+            .then(
+                (self.width as u16 * self.height as u16 + self.mines)
+                    .cmp(&(other.width as u16 * other.height as u16 + other.mines)),
+            )
+            .then(other.completion_date.cmp(&self.completion_date))
+            .then(self.name.cmp(&other.name))
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -29,13 +65,13 @@ pub enum Message {
 }
 
 impl Leaderboard {
-    fn load_entries() -> Result<Vec<LeaderboardEntry>, Box<dyn std::error::Error>> {
+    fn load_entries() -> Result<BTreeSet<LeaderboardEntry>, Box<dyn std::error::Error>> {
         let path = Application::app_dirs()
             .data_dir()
             .join("leaderboard")
             .to_path_buf();
         if !path.exists() {
-            return Ok(Vec::new());
+            return Ok(BTreeSet::new());
         }
         let file = std::fs::File::open(path)?;
         let data = ciborium::from_reader(file)?;
@@ -64,12 +100,13 @@ impl Leaderboard {
     pub fn from_menu(config: ArcLock<Config>) -> Self {
         let entries = Self::load_entries().unwrap_or_else(|err| {
             eprintln!("Failed to load leaderboard: {err}");
-            Vec::new()
+            BTreeSet::new()
         });
         Self {
             config,
             entries,
             new_entry: None,
+            current_tab: Tab::All,
         }
     }
     pub fn from_new_time(
@@ -80,7 +117,7 @@ impl Leaderboard {
     ) -> Self {
         let mut entries = Self::load_entries().unwrap_or_else(|err| {
             eprintln!("Failed to load leaderboard: {err}");
-            Vec::new()
+            BTreeSet::new()
         });
         // TODO: This will add new entry into entries for now whilst I design a way to
         // modify entries before having them inserted into the master list
@@ -92,16 +129,17 @@ impl Leaderboard {
             height,
             mines,
         };
-        entries.push(new_entry.clone());
+        entries.insert(new_entry.clone());
         Self {
             config,
             entries,
             new_entry: Some(new_entry),
+            current_tab: Tab::All,
         }
     }
     fn entry_element(&self, entry: &LeaderboardEntry) -> Element<'_, SuperMessage> {
-        let font = self.config.read().unwrap().menu_theme.default_font();
-        let name = GuiWidget::text(entry.name.clone()).font(font);
+        let config = &self.config.read().unwrap().menu_theme;
+        let name = config.text(entry.name.clone());
         let time_string = if entry.time.num_seconds() < 60 {
             format!(
                 "{}.{:03}",
@@ -116,10 +154,10 @@ impl Leaderboard {
                 entry.time.subsec_millis()
             )
         };
-        let time = GuiWidget::text(time_string).font(font);
+        let time = config.text(time_string);
         let local_date = entry.completion_date.with_timezone(&chrono::Local);
         let date_string = local_date.format("%v, %I:%M%p").to_string();
-        let date = GuiWidget::text(date_string).font(font);
+        let date = config.text(date_string);
         GuiWidget::row![name, time, date]
             .spacing(20)
             .align_y(iced::Alignment::Center)
@@ -153,14 +191,32 @@ impl Screen for Leaderboard {
         let config = self.config.read().unwrap();
         let menu_theme = &config.menu_theme;
 
-        let mut entries = self.entries.clone();
-        // if let Some(new_entry) = &self.new_entry {
-        //     entries.push(new_entry.clone());
-        // }
-        entries.sort_by_key(|entry| entry.time);
+        let entries = self.entries.iter().rev();
         let entry_elements = entries
-            .into_iter()
-            .map(|entry| self.entry_element(&entry))
+            .filter_map(|entry| match &self.current_tab {
+                Tab::All => Some(self.entry_element(entry)),
+                Tab::Beginner => {
+                    if entry.width == 9 && entry.height == 9 && entry.mines == 10 {
+                        Some(self.entry_element(entry))
+                    } else {
+                        None
+                    }
+                }
+                Tab::Intermediate => {
+                    if entry.width == 16 && entry.height == 16 && entry.mines == 40 {
+                        Some(self.entry_element(entry))
+                    } else {
+                        None
+                    }
+                }
+                Tab::Expert => {
+                    if entry.width == 30 && entry.height == 16 && entry.mines == 99 {
+                        Some(self.entry_element(entry))
+                    } else {
+                        None
+                    }
+                }
+            })
             .collect::<Vec<_>>();
         let entries_column = GuiWidget::column(entry_elements)
             .spacing(10)
