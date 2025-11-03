@@ -142,13 +142,21 @@ impl MenuTheme {
         text: impl GuiWidget::text::IntoFragment<'a>,
     ) -> GuiWidget::Text<'a, T> {
         match self {
-            MenuTheme::Light | MenuTheme::Dark => GuiWidget::Text::new(text),
+            MenuTheme::Light | MenuTheme::Dark => {
+                GuiWidget::Text::new(text).size(self.default_text_size())
+            }
             MenuTheme::NineX => GuiWidget::Text::new(text)
                 .font(iced::Font {
                     weight: iced::font::Weight::Normal,
                     ..iced::Font::with_name("Microsoft Sans Serif")
                 })
-                .size(11),
+                .size(self.default_text_size()),
+        }
+    }
+    pub const fn default_text_size(&self) -> impl Into<iced::Pixels> + Copy {
+        match self {
+            MenuTheme::Light | MenuTheme::Dark => 16,
+            MenuTheme::NineX => 11,
         }
     }
     pub fn default_font(&self) -> iced::Font {

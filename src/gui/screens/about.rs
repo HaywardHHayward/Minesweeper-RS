@@ -45,6 +45,7 @@ impl Screen for About {
             "This application was made using the Rust programming language by Hayden Reckward, using the following libraries:",
         );
         let default_font = menu_theme.default_font();
+        let default_size = menu_theme.default_text_size();
         let bold_font = match menu_theme {
             crate::MenuTheme::Light | crate::MenuTheme::Dark => iced::Font {
                 weight: iced::font::Weight::Bold,
@@ -58,6 +59,7 @@ impl Screen for About {
             span(" crate, by the developers of the Rand project")
         ]
         .font(default_font)
+        .size(default_size)
         .on_link_click(iced::never);
         let iced = GuiWidget::rich_text![
             span("The "),
@@ -65,6 +67,7 @@ impl Screen for About {
             span(" crate, by Héctor Ramón and other Iced contributors")
         ]
         .font(default_font)
+        .size(default_size)
         .on_link_click(iced::never);
         let serde = GuiWidget::rich_text![
             span("The "),
@@ -72,6 +75,7 @@ impl Screen for About {
             span(" crate, by Erick Tryzelaar, David Tolnay, and all other contributors to Serde")
         ]
         .font(default_font)
+        .size(default_size)
         .on_link_click(iced::never);
         let serde_yml = GuiWidget::rich_text![
             span("The "),
@@ -81,6 +85,7 @@ impl Screen for About {
             )
         ]
         .font(default_font)
+        .size(default_size)
         .on_link_click(iced::never);
         let directories = GuiWidget::rich_text![
             span("The "),
@@ -88,6 +93,7 @@ impl Screen for About {
             span(" crate, by Simon Ochsenreither")
         ]
         .font(default_font)
+        .size(default_size)
         .on_link_click(iced::never);
         let zip = GuiWidget::rich_text![
             span("The "),
@@ -95,6 +101,7 @@ impl Screen for About {
             span(" crate, by Mathijs van de Nes, Marli Frost, Ryan Levick, and Chris Hennick")
         ]
         .font(default_font)
+        .size(default_size)
         .on_link_click(iced::never);
         let walkdir = GuiWidget::rich_text![
             span("The "),
@@ -102,6 +109,7 @@ impl Screen for About {
             span(" crate, by Andrew Gallan")
         ]
         .font(default_font)
+        .size(default_size)
         .on_link_click(iced::never);
         let tinyvec = GuiWidget::rich_text![
             span("The "),
@@ -109,6 +117,7 @@ impl Screen for About {
             span(" crate, by Lokathor")
         ]
         .font(default_font)
+        .size(default_size)
         .on_link_click(iced::never);
         let thiserror = GuiWidget::rich_text![
             span("The "),
@@ -116,6 +125,7 @@ impl Screen for About {
             span(" crate, by David Tolnay")
         ]
         .font(default_font)
+        .size(default_size)
         .on_link_click(iced::never);
         let ciborium = GuiWidget::rich_text![
             span("The "),
@@ -123,6 +133,7 @@ impl Screen for About {
             span(" crate, by Nathaniel McCallum")
         ]
         .font(default_font)
+        .size(default_size)
         .on_link_click(iced::never);
         let whoami = GuiWidget::rich_text![
             span("The "),
@@ -130,6 +141,7 @@ impl Screen for About {
             span(" crate, by the WhoAmI contributors")
         ]
         .font(default_font)
+        .size(default_size)
         .on_link_click(iced::never);
 
         let library_text = GuiWidget::column![

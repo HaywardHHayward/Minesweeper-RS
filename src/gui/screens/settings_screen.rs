@@ -140,12 +140,16 @@ impl Screen for SettingsScreen {
             None
         };
 
+        let default_font = menu_theme.default_font();
+        let text_size = menu_theme.default_text_size();
+
         let menu_theme_text = menu_theme.text("Menu Theme:");
         let menu_theme_picker =
             GuiWidget::pick_list(MenuTheme::ALL, self.menu_theme.to_owned(), |theme| {
                 SuperMessage::SettingsScreen(Message::MenuThemeChanged(theme))
             })
-            .font(menu_theme.default_font())
+            .font(default_font)
+            .text_size(text_size)
             .placeholder(self.config.read().unwrap().menu_theme.to_string());
         let menu_theme_row = GuiWidget::row![menu_theme_text, menu_theme_picker].spacing(10);
 
@@ -154,7 +158,8 @@ impl Screen for SettingsScreen {
             GuiWidget::pick_list(GameTheme::ALL, self.game_theme.to_owned(), |theme| {
                 SuperMessage::SettingsScreen(Message::GameThemeChanged(theme))
             })
-            .font(menu_theme.default_font())
+            .font(default_font)
+            .text_size(text_size)
             .placeholder(self.config.read().unwrap().game_theme.to_string());
         let game_theme = GuiWidget::row![game_theme_text, game_theme_picker].spacing(10);
 
