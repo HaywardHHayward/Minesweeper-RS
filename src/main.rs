@@ -1,5 +1,7 @@
 use minesweeper_rs::*;
 
+// TODO: Add support for command line arguments
+
 pub fn main() -> iced::Result {
     iced::application(Application::create, update, view)
         .title("Minesweeper")
