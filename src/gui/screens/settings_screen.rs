@@ -151,7 +151,9 @@ impl Screen for SettingsScreen {
             .font(default_font)
             .text_size(text_size)
             .placeholder(self.config.read().unwrap().menu_theme.to_string());
-        let menu_theme_row = GuiWidget::row![menu_theme_text, menu_theme_picker].spacing(10);
+        let menu_theme_row = GuiWidget::row![menu_theme_text, menu_theme_picker]
+            .align_y(iced::Center)
+            .spacing(10);
 
         let game_theme_text = menu_theme.text("Game Theme:");
         let game_theme_picker =
@@ -161,7 +163,9 @@ impl Screen for SettingsScreen {
             .font(default_font)
             .text_size(text_size)
             .placeholder(self.config.read().unwrap().game_theme.to_string());
-        let game_theme = GuiWidget::row![game_theme_text, game_theme_picker].spacing(10);
+        let game_theme = GuiWidget::row![game_theme_text, game_theme_picker]
+            .align_y(iced::Center)
+            .spacing(10);
 
         let scale_factor_text = menu_theme.text("Scale Factor:");
         let scale_factor_slider = GuiWidget::slider(
@@ -177,7 +181,9 @@ impl Screen for SettingsScreen {
                 .unwrap_or_else(|| self.config.read().unwrap().scale_factor)
         ));
         let scale_factor =
-            GuiWidget::row![scale_factor_text, scale_factor_slider, scale_factor_value].spacing(10);
+            GuiWidget::row![scale_factor_text, scale_factor_slider, scale_factor_value]
+                .align_y(iced::Center)
+                .spacing(10);
 
         let reset_leaderboard_button = menu_theme
             .button(
