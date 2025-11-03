@@ -143,6 +143,14 @@ impl Screen for About {
         .font(default_font)
         .size(default_size)
         .on_link_click(iced::never);
+        let chrono = GuiWidget::rich_text![
+            span("The "),
+            span("chrono").font(bold_font),
+            span(" crate, by Kang Seonghoon and the Chrono contributors")
+        ]
+        .font(default_font)
+        .size(default_size)
+        .on_link_click(iced::never);
 
         let library_text = GuiWidget::column![
             rand,
@@ -155,7 +163,8 @@ impl Screen for About {
             tinyvec,
             thiserror,
             ciborium,
-            whoami
+            whoami,
+            chrono
         ];
 
         let about_text = GuiWidget::column![intro_message, library_text]
