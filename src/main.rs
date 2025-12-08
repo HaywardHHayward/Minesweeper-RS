@@ -1,9 +1,19 @@
+use clap::Parser;
 use minesweeper::*;
 
 // TODO: Add support for command line arguments
 
 pub fn main() -> iced::Result {
-    iced::application(Application::default, update, view)
+    let cli = cli::Cli::parse();
+    let boot_fn = cli.get_preset_difficulty().map_or(
+        Application::default as fn() -> Application,
+        |difficulty| match difficulty {
+            cli::PresetDifficulty::Beginner => Application::create_beginner,
+            cli::PresetDifficulty::Intermediate => Application::create_intermediate,
+            cli::PresetDifficulty::Expert => Application::create_expert,
+        },
+    );
+    iced::application(boot_fn, update, view)
         .title("Minesweeper")
         .settings(iced::Settings {
             id: Some("com.github.haywardhhayward.Minesweeper".to_string()),

@@ -151,6 +151,14 @@ impl Screen for About {
         .font(default_font)
         .size(default_size)
         .on_link_click(iced::never);
+        let clap = GuiWidget::rich_text![
+            span("The "),
+            span("clap").font(bold_font),
+            span(" crate, by Kevin K. and the Clap contributors")
+        ]
+        .font(default_font)
+        .size(default_size)
+        .on_link_click(iced::never);
 
         let library_text = GuiWidget::column![
             rand,
@@ -164,7 +172,8 @@ impl Screen for About {
             thiserror,
             ciborium,
             whoami,
-            chrono
+            chrono,
+            clap
         ];
 
         let about_text = GuiWidget::column![intro_message, library_text]

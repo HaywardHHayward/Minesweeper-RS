@@ -1,5 +1,5 @@
 #![deny(missing_debug_implementations)]
-
+pub mod cli;
 pub mod core;
 mod gui;
 pub use core::{board::*, cell::*};

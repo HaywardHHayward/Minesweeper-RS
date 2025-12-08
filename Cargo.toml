@@ -1,6 +1,6 @@
 [package]
 name = "minesweeper"
-version = "0.6.47"
+version = "0.6.48"
 authors = ["Hayden Reckward <tictanic8@hotmail.com>"]
 edition = "2024"
 rust-version = "1.88.0"
@@ -11,35 +11,36 @@ license = "Artistic-2.0"
 categories = ["games"]
 publish = false
 
-[profile.release]
-lto = "thin"
-
-[features]
-default = ["non-free"]
-benching = []
-non-free = []
+[[bench]]
+required-features = ["benching"]
+name = "benches"
+harness = false
 
 [dependencies]
-thiserror = "2"
-rand = "0.9"
+thiserror = "2.0"
+rand = "0.9.2"
 iced = { version = "0.14.0", features = ["image", "tokio", "svg"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_yml = "0.0.12"
 directories = "6.0"
 zip = "6.0"
 tinyvec = "1.10"
-ciborium = "0.2"
-whoami = "1.6.1"
+ciborium = "0.2.2"
+whoami = "1.6"
 chrono = { version = "0.4.42", features = ["serde"] }
-
-[build-dependencies]
-zip = "6.0.0"
-walkdir = "2.5"
+clap = { version = "4.5", features = ["cargo", "derive"] }
 
 [dev-dependencies]
 criterion = { version = "0.7.0", features = ["html_reports"] }
 
-[[bench]]
-required-features = ["benching"]
-name = "benches"
-harness = false
+[build-dependencies]
+zip = "6.0"
+walkdir = "2.5"
+
+[features]
+default = ["non-free"]
+benching = []
+non-free = []
+
+[profile.release]
+lto = "thin"
