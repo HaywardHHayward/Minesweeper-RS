@@ -200,13 +200,10 @@ impl Application {
             config,
         }
     }
-    pub fn create_custom(width: u8, height: u8, mines: u16) -> Self {
+    pub fn create_custom(width: NonZeroU8, height: NonZeroU8, mines: NonZeroU16) -> Self {
         let config = Arc::new(RwLock::new(Self::initialize_config()));
         // TODO: Validate custom board parameters more gracefully
-        let width = NonZeroU8::new(width).expect("Width must be greater than 0");
-        let height = NonZeroU8::new(height).expect("Height must be greater than 0");
-        let mines = NonZeroU16::new(mines).expect("Mines must be greater than 0");
-        if mines.get() as u32 >= (width.get() as u32 * height.get() as u32) {
+        if mines.get() >= (width.get() as u16 * height.get() as u16) {
             panic!("Mines must be less than width * height");
         }
         let board = crate::Board::create_custom(width, height, mines).unwrap();

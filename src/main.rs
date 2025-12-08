@@ -1,18 +1,23 @@
 use clap::Parser;
 use minesweeper::*;
 
-// TODO: Add support for command line arguments
-
 pub fn main() -> iced::Result {
     let cli = cli::Cli::parse();
-    let boot_fn = cli.get_preset_difficulty().map_or(
-        Application::default as fn() -> Application,
-        |difficulty| match difficulty {
-            cli::PresetDifficulty::Beginner => Application::create_beginner,
-            cli::PresetDifficulty::Intermediate => Application::create_intermediate,
-            cli::PresetDifficulty::Expert => Application::create_expert,
-        },
-    );
+    let boot_fn: Box<dyn Fn() -> Application> =
+        Box::new(move || match cli.get_preset_difficulty() {
+            None => Application::create(),
+            Some(preset) => match preset {
+                cli::PresetDifficulty::Beginner => Application::create_beginner(),
+                cli::PresetDifficulty::Intermediate => Application::create_intermediate(),
+                cli::PresetDifficulty::Expert => Application::create_expert(),
+                cli::PresetDifficulty::Custom => {
+                    let Some((width, height, mines)) = cli.get_custom_settings() else {
+                        panic!("Custom settings must be provided for custom difficulty");
+                    };
+                    Application::create_custom(width, height, mines)
+                }
+            },
+        });
     iced::application(boot_fn, update, view)
         .title("Minesweeper")
         .settings(iced::Settings {
@@ -28,7 +33,7 @@ pub fn main() -> iced::Result {
             ..Default::default()
         })
         .subscription(subscription)
-        .theme(theme)
         .scale_factor(scale_factor)
+        .theme(theme)
         .run()
 }
