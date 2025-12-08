@@ -1,4 +1,7 @@
-use std::sync::{Arc, RwLock};
+use std::{
+    num::{NonZeroU8, NonZeroU16},
+    sync::{Arc, RwLock},
+};
 
 use iced::{Element, Subscription, Task};
 use screens::Message;
@@ -101,17 +104,22 @@ impl Screen for Application {
     fn subscription(&self) -> Option<Subscription<Message>> {
         let close_subscription =
             iced::window::close_requests().map(|_| Message::App(AppMessage::CloseApp));
-        let change_focus_subscription = iced::keyboard::on_key_press(|key, modifiers| match key {
-            iced::keyboard::Key::Named(iced::keyboard::key::Named::Tab) => {
-                if modifiers.is_empty() {
-                    Some(Message::App(AppMessage::NextFocus))
-                } else if modifiers == iced::keyboard::Modifiers::SHIFT {
-                    Some(Message::App(AppMessage::PreviousFocus))
-                } else {
-                    None
+        let change_focus_subscription = iced::keyboard::listen().filter_map(|event| {
+            let iced::keyboard::Event::KeyPressed { key, modifiers, .. } = event else {
+                return None;
+            };
+            match key {
+                iced::keyboard::Key::Named(iced::keyboard::key::Named::Tab) => {
+                    if modifiers.is_empty() {
+                        Some(Message::App(AppMessage::NextFocus))
+                    } else if modifiers.contains(iced::keyboard::Modifiers::SHIFT) {
+                        Some(Message::App(AppMessage::PreviousFocus))
+                    } else {
+                        None
+                    }
                 }
+                _ => None,
             }
-            _ => None,
         });
         let app_subscription = Subscription::batch([close_subscription, change_focus_subscription]);
         if let Some(screen_subscription) = self.screen.subscription() {
@@ -119,6 +127,12 @@ impl Screen for Application {
         } else {
             Some(app_subscription)
         }
+    }
+}
+
+impl Default for Application {
+    fn default() -> Self {
+        Self::create()
     }
 }
 
@@ -137,12 +151,12 @@ impl Application {
         }
         Ok(())
     }
-    pub fn create() -> Self {
+    fn initialize_config() -> config::Config {
         let config_path = Application::app_dirs()
             .config_dir()
             .join("config.yaml")
             .to_path_buf();
-        let config = if config_path.exists() {
+        if config_path.exists() {
             config::Config::load(&config_path).unwrap_or_else(|_| {
                 // Placeholder for proper error handling, log it for now and use default config,
                 // making sure to save it so that a proper config file exists next time
@@ -153,10 +167,51 @@ impl Application {
             })
         } else {
             config::Config::default()
-        };
-        let config = Arc::new(RwLock::new(config));
+        }
+    }
+    pub fn create() -> Self {
+        let config = Arc::new(RwLock::new(Self::initialize_config()));
         Application {
             screen: Box::new(screens::main_menu::MainMenu::build(config.clone())),
+            config,
+        }
+    }
+    pub fn create_beginner() -> Self {
+        let config = Arc::new(RwLock::new(Self::initialize_config()));
+        let board = crate::Board::create_beginner();
+        Application {
+            screen: Box::new(screens::game::Game::build(config.clone(), board)),
+            config,
+        }
+    }
+    pub fn create_intermediate() -> Self {
+        let config = Arc::new(RwLock::new(Self::initialize_config()));
+        let board = crate::Board::create_intermediate();
+        Application {
+            screen: Box::new(screens::game::Game::build(config.clone(), board)),
+            config,
+        }
+    }
+    pub fn create_expert() -> Self {
+        let config = Arc::new(RwLock::new(Self::initialize_config()));
+        let board = crate::Board::create_expert();
+        Application {
+            screen: Box::new(screens::game::Game::build(config.clone(), board)),
+            config,
+        }
+    }
+    pub fn create_custom(width: u8, height: u8, mines: u16) -> Self {
+        let config = Arc::new(RwLock::new(Self::initialize_config()));
+        // TODO: Validate custom board parameters more gracefully
+        let width = NonZeroU8::new(width).expect("Width must be greater than 0");
+        let height = NonZeroU8::new(height).expect("Height must be greater than 0");
+        let mines = NonZeroU16::new(mines).expect("Mines must be greater than 0");
+        if mines.get() as u32 >= (width.get() as u32 * height.get() as u32) {
+            panic!("Mines must be less than width * height");
+        }
+        let board = crate::Board::create_custom(width, height, mines).unwrap();
+        Application {
+            screen: Box::new(screens::game::Game::build(config.clone(), board)),
             config,
         }
     }

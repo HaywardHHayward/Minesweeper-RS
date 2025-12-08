@@ -13,7 +13,7 @@ pub struct Leaderboard {
     current_tab: Tab,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Tab {
     All,
     Beginner,
@@ -59,9 +59,42 @@ impl Ord for LeaderboardEntry {
     }
 }
 
+impl LeaderboardEntry {
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+    fn time(&self) -> String {
+        if self.time.num_seconds() < 60 {
+            format!(
+                "{}.{:03}",
+                self.time.num_seconds(),
+                self.time.subsec_millis()
+            )
+        } else {
+            format!(
+                "{}:{:02}.{:03}",
+                self.time.num_minutes(),
+                self.time.num_seconds() % 60,
+                self.time.subsec_millis()
+            )
+        }
+    }
+    fn completion_date(&self) -> String {
+        let local_date = self.completion_date.with_timezone(&chrono::Local);
+        local_date.format("%v, %I:%M%p").to_string()
+    }
+    fn board_size(&self) -> String {
+        format!("{}x{}", self.width, self.height)
+    }
+    fn mines(&self) -> String {
+        format!("{}", self.mines)
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum Message {
     Back,
+    ChangeTab(Tab),
 }
 
 impl Leaderboard {
@@ -137,32 +170,6 @@ impl Leaderboard {
             current_tab: Tab::All,
         }
     }
-    fn entry_element(&self, entry: &LeaderboardEntry) -> Element<'_, SuperMessage> {
-        let config = &self.config.read().unwrap().menu_theme;
-        let name = config.text(entry.name.clone());
-        let time_string = if entry.time.num_seconds() < 60 {
-            format!(
-                "{}.{:03}",
-                entry.time.num_seconds(),
-                entry.time.subsec_millis()
-            )
-        } else {
-            format!(
-                "{}:{:02}.{:03}",
-                entry.time.num_minutes(),
-                entry.time.num_seconds() % 60,
-                entry.time.subsec_millis()
-            )
-        };
-        let time = config.text(time_string);
-        let local_date = entry.completion_date.with_timezone(&chrono::Local);
-        let date_string = local_date.format("%v, %I:%M%p").to_string();
-        let date = config.text(date_string);
-        GuiWidget::row![name, time, date]
-            .spacing(20)
-            .align_y(iced::Alignment::Center)
-            .into()
-    }
 }
 
 impl Screen for Leaderboard {
@@ -185,6 +192,10 @@ impl Screen for Leaderboard {
                     .map(SuperMessage::App),
                 )
             }
+            Message::ChangeTab(tab) => {
+                self.current_tab = tab;
+                None
+            }
         }
     }
     fn view(&self) -> Element<'_, SuperMessage> {
@@ -192,41 +203,64 @@ impl Screen for Leaderboard {
         let menu_theme = &config.menu_theme;
 
         let entries = self.entries.iter().rev();
-        let entry_elements = entries
-            .filter_map(|entry| match &self.current_tab {
-                Tab::All => Some(self.entry_element(entry)),
-                Tab::Beginner => {
-                    if entry.width == 9 && entry.height == 9 && entry.mines == 10 {
-                        Some(self.entry_element(entry))
-                    } else {
-                        None
-                    }
-                }
-                Tab::Intermediate => {
-                    if entry.width == 16 && entry.height == 16 && entry.mines == 40 {
-                        Some(self.entry_element(entry))
-                    } else {
-                        None
-                    }
-                }
-                Tab::Expert => {
-                    if entry.width == 30 && entry.height == 16 && entry.mines == 99 {
-                        Some(self.entry_element(entry))
-                    } else {
-                        None
-                    }
-                }
-            })
-            .collect::<Vec<_>>();
-        let entries_column = GuiWidget::column(entry_elements)
-            .spacing(10)
-            .height(iced::Fill)
-            .width(iced::Fill);
-        let entries_content = GuiWidget::container(GuiWidget::scrollable(entries_column))
-            .padding(10)
-            .height(iced::Fill)
-            .width(iced::Fill)
-            .style(GuiWidget::container::bordered_box);
+        let table_columns = [
+            GuiWidget::table::column(menu_theme.text("Name"), |entry: &LeaderboardEntry| {
+                menu_theme.text(entry.name())
+            }),
+            GuiWidget::table::column(menu_theme.text("Time"), |entry: &LeaderboardEntry| {
+                menu_theme.text(entry.time())
+            }),
+            GuiWidget::table::column(
+                menu_theme.text("Completion Date"),
+                |entry: &LeaderboardEntry| menu_theme.text(entry.completion_date()),
+            ),
+            GuiWidget::table::column(menu_theme.text("Board Size"), |entry: &LeaderboardEntry| {
+                menu_theme.text(entry.board_size())
+            }),
+            GuiWidget::table::column(menu_theme.text("Mines"), |entry: &LeaderboardEntry| {
+                menu_theme.text(entry.mines())
+            }),
+        ];
+        let entry_elements = entries.filter(|entry| match self.current_tab {
+            Tab::All => true,
+            Tab::Beginner => entry.width == 9 && entry.height == 9 && entry.mines == 10,
+            Tab::Intermediate => entry.width == 16 && entry.height == 16 && entry.mines == 40,
+            Tab::Expert => entry.width == 30 && entry.height == 16 && entry.mines == 99,
+        });
+        let entry_table = GuiWidget::table(table_columns, entry_elements);
+        let entries_filter = GuiWidget::row![
+            menu_theme
+                .button(menu_theme.text("All"), crate::MenuButtonStyle::Primary)
+                .on_press(SuperMessage::Leaderboard(Message::ChangeTab(Tab::All))),
+            menu_theme
+                .button(menu_theme.text("Beginner"), crate::MenuButtonStyle::Primary)
+                .on_press(SuperMessage::Leaderboard(Message::ChangeTab(Tab::Beginner))),
+            menu_theme
+                .button(
+                    menu_theme.text("Intermediate"),
+                    crate::MenuButtonStyle::Primary
+                )
+                .on_press(SuperMessage::Leaderboard(Message::ChangeTab(
+                    Tab::Intermediate
+                ))),
+            menu_theme
+                .button(menu_theme.text("Expert"), crate::MenuButtonStyle::Primary)
+                .on_press(SuperMessage::Leaderboard(Message::ChangeTab(Tab::Expert)))
+        ]
+        .spacing(10)
+        .align_y(iced::Alignment::Center);
+        let entries_content = GuiWidget::container(
+            GuiWidget::column![
+                GuiWidget::center_x(entries_filter),
+                GuiWidget::rule::horizontal(1),
+                GuiWidget::scrollable(entry_table)
+            ]
+            .spacing(5),
+        )
+        .padding(10)
+        .height(iced::Fill)
+        .width(iced::Fill)
+        .style(GuiWidget::container::bordered_box);
 
         let back_button = menu_theme
             .button(menu_theme.text("Back"), crate::MenuButtonStyle::Secondary)
