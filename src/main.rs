@@ -3,21 +3,20 @@ use minesweeper::*;
 
 pub fn main() -> iced::Result {
     let cli = cli::Cli::parse();
-    let boot_fn: Box<dyn Fn() -> Application> =
-        Box::new(move || match cli.get_preset_difficulty() {
-            None => Application::create(),
-            Some(preset) => match preset {
-                cli::PresetDifficulty::Beginner => Application::create_beginner(),
-                cli::PresetDifficulty::Intermediate => Application::create_intermediate(),
-                cli::PresetDifficulty::Expert => Application::create_expert(),
-                cli::PresetDifficulty::Custom => {
-                    let Some((width, height, mines)) = cli.get_custom_settings() else {
-                        panic!("Custom settings must be provided for custom difficulty");
-                    };
-                    Application::create_custom(width, height, mines)
-                }
-            },
-        });
+    let boot_fn = move || match cli.get_preset_difficulty() {
+        None => Application::create(),
+        Some(preset) => match preset {
+            cli::PresetDifficulty::Beginner => Application::create_beginner(),
+            cli::PresetDifficulty::Intermediate => Application::create_intermediate(),
+            cli::PresetDifficulty::Expert => Application::create_expert(),
+            cli::PresetDifficulty::Custom => {
+                let Some((width, height, mines)) = cli.get_custom_settings() else {
+                    panic!("Custom settings must be provided for custom difficulty");
+                };
+                Application::create_custom(width, height, mines)
+            }
+        },
+    };
     iced::application(boot_fn, update, view)
         .title("Minesweeper")
         .settings(iced::Settings {

@@ -1,6 +1,6 @@
 [package]
 name = "minesweeper"
-version = "0.6.49"
+version = "0.6.50"
 authors = ["Hayden Reckward <tictanic8@hotmail.com>"]
 edition = "2024"
 rust-version = "1.88.0"

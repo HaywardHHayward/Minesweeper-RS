@@ -95,6 +95,9 @@ impl LeaderboardEntry {
 pub enum Message {
     Back,
     ChangeTab(Tab),
+    ChangeNewEntryName(String),
+    SubmitNewEntry,
+    CancelNewEntry,
 }
 
 impl Leaderboard {
@@ -148,12 +151,10 @@ impl Leaderboard {
         completion_date: DateTime<chrono::Utc>,
         (width, height, mines): (u8, u8, u16),
     ) -> Self {
-        let mut entries = Self::load_entries().unwrap_or_else(|err| {
+        let entries = Self::load_entries().unwrap_or_else(|err| {
             eprintln!("Failed to load leaderboard: {err}");
             BTreeSet::new()
         });
-        // TODO: This will add new entry into entries for now whilst I design a way to
-        // modify entries before having them inserted into the master list
         let new_entry = LeaderboardEntry {
             name: whoami::realname(),
             time,
@@ -162,7 +163,6 @@ impl Leaderboard {
             height,
             mines,
         };
-        entries.insert(new_entry.clone());
         Self {
             config,
             entries,
@@ -194,6 +194,26 @@ impl Screen for Leaderboard {
             }
             Message::ChangeTab(tab) => {
                 self.current_tab = tab;
+                None
+            }
+            Message::ChangeNewEntryName(new_name) => {
+                if let Some(ref mut entry) = self.new_entry {
+                    entry.name = new_name;
+                }
+                None
+            }
+            Message::SubmitNewEntry => {
+                if let Some(entry) = self.new_entry.take() {
+                    self.entries.insert(entry);
+                    let saving_result = self.save_entries();
+                    if let Err(err) = saving_result {
+                        eprintln!("Failed to save leaderboard: {err}");
+                    };
+                }
+                None
+            }
+            Message::CancelNewEntry => {
+                self.new_entry = None;
                 None
             }
         }
@@ -270,6 +290,59 @@ impl Screen for Leaderboard {
             .spacing(20)
             .align_x(iced::Alignment::Center);
 
-        GuiWidget::center(content).padding(10).into()
+        let popup_window = self.new_entry.as_ref().map(|entry| {
+            let popup_text = menu_theme
+                .text("Enter your name for the leaderboard:")
+                .size(16);
+
+            let name_input_text = menu_theme.text("Your name: ");
+            let name_text_input = GuiWidget::text_input("", entry.name().as_str())
+                .on_input(|new_name| {
+                    SuperMessage::Leaderboard(Message::ChangeNewEntryName(new_name))
+                })
+                .font(menu_theme.default_font());
+
+            let name_input = GuiWidget::row![name_input_text, name_text_input]
+                .spacing(10)
+                .align_y(iced::Alignment::Center);
+
+            let main_content = GuiWidget::column![popup_text, name_input]
+                .spacing(20)
+                .align_x(iced::Alignment::Center);
+
+            let submit_button = menu_theme
+                .button(menu_theme.text("Submit"), crate::MenuButtonStyle::Primary)
+                .on_press(SuperMessage::Leaderboard(Message::SubmitNewEntry));
+            let cancel_button = menu_theme
+                .button(
+                    menu_theme.text("Discard new entry"),
+                    crate::MenuButtonStyle::Secondary,
+                )
+                .on_press(SuperMessage::Leaderboard(Message::CancelNewEntry));
+
+            let buttons = GuiWidget::row![submit_button, cancel_button]
+                .spacing(10)
+                .align_y(iced::Alignment::Center);
+
+            GuiWidget::opaque(
+                GuiWidget::container(
+                    GuiWidget::column![main_content, buttons]
+                        .spacing(20)
+                        .align_x(iced::Alignment::Center),
+                )
+                .padding(20)
+                .style(GuiWidget::container::bordered_box),
+            )
+        });
+
+        if let Some(popup) = popup_window {
+            GuiWidget::stack![
+                GuiWidget::center(content).padding(10),
+                GuiWidget::center(popup),
+            ]
+            .into()
+        } else {
+            GuiWidget::center(content).padding(10).into()
+        }
     }
 }

@@ -2410,7 +2410,7 @@ dependencies = [
 
 [[package]]
 name = "minesweeper"
-version = "0.6.49"
+version = "0.6.50"
 dependencies = [
  "chrono",
  "ciborium",
