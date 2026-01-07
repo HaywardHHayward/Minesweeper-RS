@@ -53,112 +53,37 @@ impl Screen for About {
             },
             crate::MenuTheme::NineX => iced::Font::with_name("Microsoft Sans Serif"),
         };
-        let rand = GuiWidget::rich_text![
-            span("The "),
-            span("rand").font(bold_font),
-            span(" crate, by the developers of the Rand project")
-        ]
-        .font(default_font)
-        .size(default_size)
-        .on_link_click(iced::never);
-        let iced = GuiWidget::rich_text![
-            span("The "),
-            span("iced").font(bold_font),
-            span(" crate, by Héctor Ramón and other Iced contributors")
-        ]
-        .font(default_font)
-        .size(default_size)
-        .on_link_click(iced::never);
-        let serde = GuiWidget::rich_text![
-            span("The "),
-            span("serde").font(bold_font),
-            span(" crate, by Erick Tryzelaar, David Tolnay, and all other contributors to Serde")
-        ]
-        .font(default_font)
-        .size(default_size)
-        .on_link_click(iced::never);
-        let serde_yml = GuiWidget::rich_text![
-            span("The "),
-            span("serde_yml").font(bold_font),
-            span(
-                " crate (a fork of the `serde_yaml` crate by David Tolnay), by Sebastien Rousseau"
-            )
-        ]
-        .font(default_font)
-        .size(default_size)
-        .on_link_click(iced::never);
-        let directories = GuiWidget::rich_text![
-            span("The "),
-            span("directories").font(bold_font),
-            span(" crate, by Simon Ochsenreither")
-        ]
-        .font(default_font)
-        .size(default_size)
-        .on_link_click(iced::never);
-        let zip = GuiWidget::rich_text![
-            span("The "),
-            span("zip").font(bold_font),
-            span(" crate, by Mathijs van de Nes, Marli Frost, Ryan Levick, and Chris Hennick")
-        ]
-        .font(default_font)
-        .size(default_size)
-        .on_link_click(iced::never);
-        let walkdir = GuiWidget::rich_text![
-            span("The "),
-            span("walkdir").font(bold_font),
-            span(" crate, by Andrew Gallan")
-        ]
-        .font(default_font)
-        .size(default_size)
-        .on_link_click(iced::never);
-        let tinyvec = GuiWidget::rich_text![
-            span("The "),
-            span("tinyvec").font(bold_font),
-            span(" crate, by Lokathor")
-        ]
-        .font(default_font)
-        .size(default_size)
-        .on_link_click(iced::never);
-        let thiserror = GuiWidget::rich_text![
-            span("The "),
-            span("thiserror").font(bold_font),
-            span(" crate, by David Tolnay")
-        ]
-        .font(default_font)
-        .size(default_size)
-        .on_link_click(iced::never);
-        let ciborium = GuiWidget::rich_text![
-            span("The "),
-            span("ciborium").font(bold_font),
-            span(" crate, by Nathaniel McCallum")
-        ]
-        .font(default_font)
-        .size(default_size)
-        .on_link_click(iced::never);
-        let whoami = GuiWidget::rich_text![
-            span("The "),
-            span("whoami").font(bold_font),
-            span(" crate, by the WhoAmI contributors")
-        ]
-        .font(default_font)
-        .size(default_size)
-        .on_link_click(iced::never);
-        let chrono = GuiWidget::rich_text![
-            span("The "),
-            span("chrono").font(bold_font),
-            span(" crate, by Kang Seonghoon and the Chrono contributors")
-        ]
-        .font(default_font)
-        .size(default_size)
-        .on_link_click(iced::never);
-        let clap = GuiWidget::rich_text![
-            span("The "),
-            span("clap").font(bold_font),
-            span(" crate, by Kevin K. and the Clap contributors")
-        ]
-        .font(default_font)
-        .size(default_size)
-        .on_link_click(iced::never);
+        let about_message_fn = |crate_name, crate_author| {
+            GuiWidget::rich_text![
+                span("The "),
+                span(crate_name).font(bold_font),
+                span(format!(" crate, by {}", crate_author))
+            ]
+            .font(default_font)
+            .size(default_size)
+            .on_link_click(iced::never)
+        };
+        let rand = about_message_fn("rand", "the developers of the Rand project");
+        let iced = about_message_fn("iced", "Héctor Ramón and other Iced contributors");
+        let serde = about_message_fn(
+            "serde",
+            "Erick Tryzelaar, David Tolnay, and all other contributors to Serde",
+        );
+        let serde_yml = about_message_fn("serde_yml", "Sebastien Rousseau");
+        let directories = about_message_fn("directories", "Simon Ochsenreither");
+        let zip = about_message_fn(
+            "zip",
+            "Mathijs van de Nes, Marli Frost, Ryan Levick, and Chris Hennick",
+        );
+        let walkdir = about_message_fn("walkdir", "Andrew Gallan");
+        let tinyvec = about_message_fn("tinyvec", "Lokathor");
+        let thiserror = about_message_fn("thiserror", "David Tolnay");
+        let ciborium = about_message_fn("ciborium", "Nathaniel McCallum");
+        let whoami = about_message_fn("whoami", "the WhoAmI contributors");
+        let chrono = about_message_fn("chrono", "Kang Seonghoon and the Chrono contributors");
+        let clap = about_message_fn("clap", "Kevin K. and the Clap contributors");
+        let rfd = about_message_fn("rfd", "PolyMeilex");
+        let anyhow = about_message_fn("anyhow", "David Tolnay");
 
         let library_text = GuiWidget::column![
             rand,
@@ -173,7 +98,9 @@ impl Screen for About {
             ciborium,
             whoami,
             chrono,
-            clap
+            clap,
+            rfd,
+            anyhow
         ];
 
         let about_text = GuiWidget::column![intro_message, library_text]
