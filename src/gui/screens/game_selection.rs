@@ -1,9 +1,10 @@
 ﻿use std::sync::Arc;
 
 use iced::{Task, widget as GuiWidget};
+use minesweeper::Board;
 
 use super::{AppMessage, CustomSetup, Game, MainMenu, Message as SuperMessage};
-use crate::{ArcLock, Board, Config, Screen};
+use crate::{ArcLock, Config, Screen};
 
 #[derive(Debug, Clone)]
 pub enum Message {

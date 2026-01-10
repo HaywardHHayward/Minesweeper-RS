@@ -1,11 +1,13 @@
 use std::{
     collections::{HashSet, VecDeque},
+    fmt::Display,
     num::{NonZeroU8, NonZeroU16},
 };
 
 use rand::prelude::*;
+use thiserror::Error;
 
-use crate::core::{cell, cell::Cell};
+use crate::{cell, cell::Cell};
 
 #[derive(Copy, Clone, Debug)]
 pub enum BoardState {
@@ -26,11 +28,28 @@ pub struct Board {
     state: BoardState,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum BoardError {
     InvalidBoardSize,
     TooManyMines { max_mines: NonZeroU16 }, /* The number of mines equals to or exceeds the
                                              * board area */
+}
+
+impl Display for BoardError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BoardError::InvalidBoardSize => {
+                write!(f, "The board size is invalid. A board cannot be 1x1.")
+            }
+            BoardError::TooManyMines { max_mines } => {
+                write!(
+                    f,
+                    "The number of mines exceeds the maximum allowed for the board size ({}).",
+                    max_mines
+                )
+            }
+        }
+    }
 }
 
 impl Board {
@@ -361,9 +380,8 @@ const fn coordinate_to_linear(x: u8, y: u8, width: NonZeroU8) -> usize {
 
 #[cfg(test)]
 mod testing {
-    use cell::AdjacentMines;
-
     use super::*;
+    use crate::cell::AdjacentMines;
     fn create_board(x: u8, y: u8, m: u16) -> Result<Board, BoardError> {
         Board::create_custom(
             NonZeroU8::new(x).unwrap(),

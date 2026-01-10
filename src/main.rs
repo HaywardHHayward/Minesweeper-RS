@@ -1,5 +1,12 @@
 use clap::Parser;
-use minesweeper::*;
+mod cli;
+mod gui;
+
+pub use gui::{
+    Application, ArcLock, Screen, assets,
+    config::{Config, GameTheme, MenuButtonStyle, MenuTheme},
+    scale_factor, subscription, theme, update, view,
+};
 
 pub fn main() -> iced::Result {
     let cli = cli::Cli::parse();
@@ -13,7 +20,10 @@ pub fn main() -> iced::Result {
                 let Some((width, height, mines)) = cli.get_custom_settings() else {
                     panic!("Custom settings must be provided for custom difficulty");
                 };
-                Application::create_custom(width, height, mines)
+                Application::create_custom(width, height, mines).unwrap_or_else(|err| {
+                    eprintln!("Failed to create custom game: {err}");
+                    Application::create()
+                })
             }
         },
     };

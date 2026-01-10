@@ -235,7 +235,7 @@ impl Application {
     }
     pub fn create_beginner() -> Self {
         let config = Arc::new(RwLock::new(Self::initialize_config()));
-        let board = crate::Board::create_beginner();
+        let board = minesweeper::Board::create_beginner();
         Application {
             screen: Box::new(screens::game::Game::build(config.clone(), board)),
             config,
@@ -243,7 +243,7 @@ impl Application {
     }
     pub fn create_intermediate() -> Self {
         let config = Arc::new(RwLock::new(Self::initialize_config()));
-        let board = crate::Board::create_intermediate();
+        let board = minesweeper::Board::create_intermediate();
         Application {
             screen: Box::new(screens::game::Game::build(config.clone(), board)),
             config,
@@ -251,22 +251,23 @@ impl Application {
     }
     pub fn create_expert() -> Self {
         let config = Arc::new(RwLock::new(Self::initialize_config()));
-        let board = crate::Board::create_expert();
+        let board = minesweeper::Board::create_expert();
         Application {
             screen: Box::new(screens::game::Game::build(config.clone(), board)),
             config,
         }
     }
-    pub fn create_custom(width: NonZeroU8, height: NonZeroU8, mines: NonZeroU16) -> Self {
+    pub fn create_custom(
+        width: NonZeroU8,
+        height: NonZeroU8,
+        mines: NonZeroU16,
+    ) -> Result<Self, anyhow::Error> {
         let config = Arc::new(RwLock::new(Self::initialize_config()));
         // TODO: Validate custom board parameters more gracefully
-        if mines.get() >= (width.get() as u16 * height.get() as u16) {
-            panic!("Mines must be less than width * height");
-        }
-        let board = crate::Board::create_custom(width, height, mines).unwrap();
-        Application {
+        let board = minesweeper::Board::create_custom(width, height, mines)?;
+        Ok(Application {
             screen: Box::new(screens::game::Game::build(config.clone(), board)),
             config,
-        }
+        })
     }
 }
