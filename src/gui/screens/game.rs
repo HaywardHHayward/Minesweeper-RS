@@ -5,9 +5,10 @@
 };
 
 use iced::{Element, Subscription, Task, widget as GuiWidget, widget::svg as GuiSvg};
+use minesweeper::{Board, Cell, board::BoardState, cell};
 
 use super::{AppMessage, Leaderboard, MainMenu, Message as SuperMessage};
-use crate::{ArcLock, Board, BoardState, Cell, Config, GameTheme, Screen, core::cell};
+use crate::{ArcLock, Config, GameTheme, Screen};
 
 #[derive(Debug, Clone)]
 pub enum Message {

@@ -4,9 +4,10 @@
 };
 
 use iced::{Element, Task, widget as GuiWidget};
+use minesweeper::{Board, BoardError};
 
 use super::{AppMessage, Game, GameSelection, Message as SuperMessage};
-use crate::{ArcLock, Board, BoardError, Config, Screen};
+use crate::{ArcLock, Config, Screen};
 #[derive(Debug)]
 pub struct CustomSetup {
     config: ArcLock<Config>,
