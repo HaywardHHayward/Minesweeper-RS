@@ -3,6 +3,7 @@
 use std::num::{NonZeroU8, NonZeroU16};
 
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
+use minesweeper::core::board::Board;
 
 const BEGINNER_DIMENSIONS: (u8, u8) = (9, 9);
 const INTERMEDIATE_DIMENSIONS: (u8, u8) = (16, 16);
@@ -38,7 +39,7 @@ pub fn open_cell_one_mine(c: &mut Criterion) {
                 b.iter_custom(|iterations| {
                     let mut timed_duration = std::time::Duration::ZERO;
                     for _ in 0..iterations {
-                        let mut board = minesweeper_rs::Board::create_custom(
+                        let mut board = Board::create_custom(
                             NonZeroU8::new(width).unwrap(),
                             NonZeroU8::new(height).unwrap(),
                             NonZeroU16::new(1).unwrap(),
@@ -82,7 +83,7 @@ pub fn open_cell_defaults(c: &mut Criterion) {
                 b.iter_custom(|iterations| {
                     let mut timed_duration = std::time::Duration::ZERO;
                     for _ in 0..iterations {
-                        let mut board = minesweeper_rs::Board::create_custom(
+                        let mut board = Board::create_custom(
                             NonZeroU8::new(width).unwrap(),
                             NonZeroU8::new(height).unwrap(),
                             NonZeroU16::new(*mines).unwrap(),
@@ -119,7 +120,7 @@ pub fn open_cell_almost_all_mines(c: &mut Criterion) {
                 b.iter_custom(|iterations| {
                     let mut timed_duration = std::time::Duration::ZERO;
                     for _ in 0..iterations {
-                        let mut board = minesweeper_rs::Board::create_custom(
+                        let mut board = Board::create_custom(
                             NonZeroU8::new(width).unwrap(),
                             NonZeroU8::new(height).unwrap(),
                             NonZeroU16::new(mines).unwrap(),
@@ -160,7 +161,7 @@ pub fn open_cell_25_percent(c: &mut Criterion) {
                 b.iter_custom(|iterations| {
                     let mut timed_duration = std::time::Duration::ZERO;
                     for _ in 0..iterations {
-                        let mut board = minesweeper_rs::Board::create_custom(
+                        let mut board = Board::create_custom(
                             NonZeroU8::new(width).unwrap(),
                             NonZeroU8::new(height).unwrap(),
                             NonZeroU16::new(mines).unwrap(),
@@ -201,7 +202,7 @@ pub fn open_cell_50_percent(c: &mut Criterion) {
                 b.iter_custom(|iterations| {
                     let mut timed_duration = std::time::Duration::ZERO;
                     for _ in 0..iterations {
-                        let mut board = minesweeper_rs::Board::create_custom(
+                        let mut board = Board::create_custom(
                             NonZeroU8::new(width).unwrap(),
                             NonZeroU8::new(height).unwrap(),
                             NonZeroU16::new(mines).unwrap(),
@@ -242,7 +243,7 @@ pub fn open_cell_75_percent(c: &mut Criterion) {
                 b.iter_custom(|iterations| {
                     let mut timed_duration = std::time::Duration::ZERO;
                     for _ in 0..iterations {
-                        let mut board = minesweeper_rs::Board::create_custom(
+                        let mut board = Board::create_custom(
                             NonZeroU8::new(width).unwrap(),
                             NonZeroU8::new(height).unwrap(),
                             NonZeroU16::new(mines).unwrap(),

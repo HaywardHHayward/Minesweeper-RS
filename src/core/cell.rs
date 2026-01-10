@@ -118,7 +118,7 @@ impl Cell {
     pub fn increment_adjacent_mines(&mut self) {
         self.cell_transition(CellEvent::IncrementAdjacentMines);
     }
-    pub fn adjacent_mines(&self) -> Option<AdjacentMines> {
+    pub const fn adjacent_mines(&self) -> Option<AdjacentMines> {
         if let MineState::Safe { adjacent_mines } = self.mine_state {
             Some(adjacent_mines)
         } else {
@@ -126,6 +126,7 @@ impl Cell {
         }
     }
     // Single function to handle all cell state transitions
+    #[inline]
     fn cell_transition(&mut self, cell_event: CellEvent) {
         match (cell_event, &self.open_state, &self.mine_state) {
             // If the cell is already opened, we should not do anything to change its state

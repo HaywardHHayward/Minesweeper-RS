@@ -71,7 +71,19 @@ impl Screen for SettingsScreen {
                 None
             }
             Message::ApplyChanges => {
-                let mut config_write = self.config.write().unwrap();
+                let mut config_write = match self.config.write() {
+                    Ok(config) => config,
+                    Err(error) => {
+                        eprintln!("Config lock is poisoned: {error}");
+                        return Some(
+                            Task::done(Message::ApplyChanges)
+                                .map(SuperMessage::SettingsScreen)
+                                .map(Box::new)
+                                .map(AppMessage::CleanConfig)
+                                .map(SuperMessage::App),
+                        );
+                    }
+                };
                 if let Some(ref menu_theme) = self.menu_theme {
                     config_write.menu_theme = menu_theme.to_owned();
                 }

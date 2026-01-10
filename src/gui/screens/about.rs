@@ -4,7 +4,7 @@ use GuiWidget::span;
 use iced::{Element, Task, widget as GuiWidget};
 
 use super::{AppMessage, MainMenu, Message as SuperMessage};
-use crate::{ArcLock, Config, Screen};
+use crate::{ArcLock, Config, Screen, gui::config};
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -39,7 +39,11 @@ impl Screen for About {
         }
     }
     fn view(&self) -> Element<'_, SuperMessage> {
-        let menu_theme = &self.config.read().unwrap().menu_theme;
+        let menu_theme = &self
+            .config
+            .read()
+            .map(|config| config.menu_theme.clone())
+            .unwrap_or(config::MenuTheme::Light);
 
         let intro_message = menu_theme.text(
             "This application was made using the Rust programming language by Hayden Reckward, using the following libraries:",
@@ -53,7 +57,7 @@ impl Screen for About {
             },
             crate::MenuTheme::NineX => iced::Font::with_name("Microsoft Sans Serif"),
         };
-        let about_message_fn = |crate_name, crate_author| {
+        let about_message_fn = |[crate_name, crate_author]: [&'static str; 2]| {
             GuiWidget::rich_text![
                 span("The "),
                 span(crate_name).font(bold_font),
@@ -63,45 +67,37 @@ impl Screen for About {
             .size(default_size)
             .on_link_click(iced::never)
         };
-        let rand = about_message_fn("rand", "the developers of the Rand project");
-        let iced = about_message_fn("iced", "Héctor Ramón and other Iced contributors");
-        let serde = about_message_fn(
-            "serde",
-            "Erick Tryzelaar, David Tolnay, and all other contributors to Serde",
-        );
-        let serde_yml = about_message_fn("serde_yml", "Sebastien Rousseau");
-        let directories = about_message_fn("directories", "Simon Ochsenreither");
-        let zip = about_message_fn(
-            "zip",
-            "Mathijs van de Nes, Marli Frost, Ryan Levick, and Chris Hennick",
-        );
-        let walkdir = about_message_fn("walkdir", "Andrew Gallan");
-        let tinyvec = about_message_fn("tinyvec", "Lokathor");
-        let thiserror = about_message_fn("thiserror", "David Tolnay");
-        let ciborium = about_message_fn("ciborium", "Nathaniel McCallum");
-        let whoami = about_message_fn("whoami", "the WhoAmI contributors");
-        let chrono = about_message_fn("chrono", "Kang Seonghoon and the Chrono contributors");
-        let clap = about_message_fn("clap", "Kevin K. and the Clap contributors");
-        let rfd = about_message_fn("rfd", "PolyMeilex");
-        let anyhow = about_message_fn("anyhow", "David Tolnay");
 
-        let library_text = GuiWidget::column![
-            rand,
-            iced,
-            serde,
-            serde_yml,
-            directories,
-            zip,
-            walkdir,
-            tinyvec,
-            thiserror,
-            ciborium,
-            whoami,
-            chrono,
-            clap,
-            rfd,
-            anyhow
+        let about_messages = [
+            ["rand", "the developers of the Rand project"],
+            ["iced", "Héctor Ramón and other Iced contributors"],
+            [
+                "serde",
+                "Erick Tryzelaar, David Tolnay, and all other contributors to Serde",
+            ],
+            ["serde_yml", "Sebastien Rousseau"],
+            ["directories", "Simon Ochsenreither"],
+            [
+                "zip",
+                "Mathijs van de Nes, Marli Frost, Ryan Levick, and Chris Hennick",
+            ],
+            ["walkdir", "Andrew Gallan"],
+            ["tinyvec", "Lokathor"],
+            ["thiserror", "David Tolnay"],
+            ["ciborium", "Nathaniel McCallum"],
+            ["whoami", "the WhoAmI contributors"],
+            ["chrono", "Kang Seonghoon and the Chrono contributors"],
+            ["clap", "Kevin K. and the Clap contributors"],
+            ["rfd", "PolyMeilex"],
+            ["anyhow", "David Tolnay"],
         ];
+
+        let library_text = GuiWidget::column(
+            about_messages
+                .into_iter()
+                .map(about_message_fn)
+                .map(Element::from),
+        );
 
         let about_text = GuiWidget::column![intro_message, library_text]
             .align_x(iced::Center)

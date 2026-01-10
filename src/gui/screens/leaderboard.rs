@@ -155,8 +155,9 @@ impl Leaderboard {
             eprintln!("Failed to load leaderboard: {err}");
             BTreeSet::new()
         });
+        let name = whoami::realname().unwrap();
         let new_entry = LeaderboardEntry {
-            name: whoami::realname(),
+            name,
             time,
             completion_date,
             width,

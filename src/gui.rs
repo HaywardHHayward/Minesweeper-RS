@@ -1,5 +1,6 @@
 use std::{
     num::{NonZeroU8, NonZeroU16},
+    ops::DerefMut,
     sync::{Arc, RwLock},
 };
 
@@ -27,7 +28,7 @@ pub fn theme(state: &Application) -> iced::Theme {
 }
 
 pub fn scale_factor(state: &Application) -> f32 {
-    state.config.read().unwrap().scale_factor
+    state.scale_factor()
 }
 
 pub trait Screen: std::fmt::Debug + Send + Sync {
@@ -51,6 +52,8 @@ pub enum AppMessage {
     CloseApp,
     NextFocus,
     PreviousFocus,
+    Error(Arc<anyhow::Error>),
+    CleanConfig(Box<Message>),
 }
 
 impl std::fmt::Debug for AppMessage {
@@ -60,6 +63,12 @@ impl std::fmt::Debug for AppMessage {
             AppMessage::CloseApp => write!(f, "CloseApp"),
             AppMessage::NextFocus => write!(f, "NextFocus"),
             AppMessage::PreviousFocus => write!(f, "PreviousFocus"),
+            AppMessage::Error(error) => {
+                write!(f, "Error: {error}")
+            }
+            AppMessage::CleanConfig(message) => {
+                write!(f, "CleanConfig: {message:?}")
+            }
         }
     }
 }
@@ -76,19 +85,41 @@ impl Screen for Application {
             return self.screen.update(message);
         };
         match message {
-            AppMessage::ChangeScreen(builder) => {
-                self.screen = Arc::into_inner(builder).expect("Failed to receive screen");
-                None
-            }
+            AppMessage::ChangeScreen(builder) => match Arc::into_inner(builder) {
+                Some(new_screen) => {
+                    self.screen = new_screen;
+                    None
+                }
+                None => Some(
+                    Task::done(anyhow::Error::msg("Failed to receive screen"))
+                        .map(Arc::from)
+                        .map(AppMessage::Error)
+                        .map(Message::App),
+                ),
+            },
             AppMessage::CloseApp => {
                 self.clear_cache().unwrap_or_else(|e| {
                     eprintln!("Failed to clear cache: {e}");
                 });
-                let config = self.config.read().unwrap();
+                let Ok(config) = self.config.read() else {
+                    return Some(
+                        Task::done(AppMessage::CloseApp)
+                            .map(Message::App)
+                            .map(Box::new)
+                            .map(AppMessage::CleanConfig)
+                            .map(Message::App),
+                    );
+                };
                 let config_dir_path = Application::app_dirs().config_dir().to_path_buf();
-                if !config_dir_path.exists() {
-                    std::fs::create_dir_all(&config_dir_path)
-                        .expect("Unable to create config directory");
+                if !config_dir_path.exists()
+                    && let Err(error) = std::fs::create_dir_all(&config_dir_path)
+                {
+                    return Some(
+                        Task::done(error.into())
+                            .map(Arc::new)
+                            .map(AppMessage::Error)
+                            .map(Message::App),
+                    );
                 }
                 let config_path = config_dir_path.join("config.yaml");
                 config.save(&config_path);
@@ -96,6 +127,23 @@ impl Screen for Application {
             }
             AppMessage::NextFocus => Some(iced::widget::operation::focus_next()),
             AppMessage::PreviousFocus => Some(iced::widget::operation::focus_previous()),
+            AppMessage::Error(error) => {
+                let error_message = rfd::AsyncMessageDialog::new()
+                    .set_level(rfd::MessageLevel::Error).set_title("Error has occurred in Minesweeper")
+                    .set_description(format!("An error has occurred in Minesweeper. Program will close upon selecting 'Ok'. Context: {error}"))
+                    .set_buttons(rfd::MessageButtons::Ok).show();
+                Some(Task::perform(error_message, |_| {
+                    Message::App(AppMessage::CloseApp)
+                }))
+            }
+            AppMessage::CleanConfig(message) => {
+                let rw_config = self.config.clone();
+                if let Err(mut poisoned_config) = self.config.write() {
+                    *poisoned_config.get_mut().deref_mut() = config::Config::default();
+                }
+                rw_config.clear_poison();
+                Some(Task::done(*message))
+            }
         }
     }
     fn view(&self) -> Element<'_, Message> {
@@ -142,7 +190,16 @@ impl Application {
             .expect("Failed to get project directories")
     }
     pub fn theme(&self) -> iced::Theme {
-        self.config.read().unwrap().menu_theme.theme()
+        self.config
+            .read()
+            .map(|config| config.menu_theme.theme())
+            .unwrap_or_else(|_| config::MenuTheme::Light.theme())
+    }
+    pub fn scale_factor(&self) -> f32 {
+        self.config
+            .read()
+            .map(|config| config.scale_factor)
+            .unwrap_or(1.0)
     }
     pub fn clear_cache(&mut self) -> Result<(), std::io::Error> {
         let cache_dir = Self::app_dirs().cache_dir().to_path_buf();

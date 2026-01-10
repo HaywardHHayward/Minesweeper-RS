@@ -77,7 +77,9 @@ impl Board {
             // The number of mines is equal to the board area (which is not a game) or
             // exceeds it (which is impossible to construct)
             return Err(BoardError::TooManyMines {
-                max_mines: NonZeroU16::new(board_area - 1).unwrap(),
+                // SAFETY: We already checked that the board area is at least 2, so board_area - 1
+                // is at least 1, and therefore non-zero
+                max_mines: unsafe { NonZeroU16::new_unchecked(board_area - 1) },
             });
         }
         Ok(unsafe {
@@ -156,12 +158,15 @@ impl Board {
             self.generate_mines(x, y);
             self.first_open = false;
         }
-        let cell = self.get_cell(x, y).unwrap();
-        if cell.is_flagged() {
+        if let Some(cell) = self.get_cell(x, y)
+            && cell.is_flagged()
+        {
             return;
         }
         self.unopened_coordinates.remove(&(x, y));
-        let cell = self.get_cell_mut(x, y).unwrap();
+        let Some(cell) = self.get_cell_mut(x, y) else {
+            return;
+        };
         cell.open();
         if cell.is_mine() {
             self.state = BoardState::Lost;
@@ -178,13 +183,16 @@ impl Board {
                 {
                     continue;
                 }
-                let cell = self.get_cell(surrounding_x, surrounding_y).unwrap();
-                if cell.is_flagged() {
+                if let Some(cell) = self.get_cell(x, y)
+                    && cell.is_flagged()
+                {
                     continue;
                 }
                 self.unopened_coordinates
                     .remove(&(surrounding_x, surrounding_y));
-                let cell = self.get_cell_mut(surrounding_x, surrounding_y).unwrap();
+                let Some(cell) = self.get_cell_mut(surrounding_x, surrounding_y) else {
+                    continue;
+                };
                 cell.open();
                 if let Some(cell::AdjacentMines::Zero) = cell.adjacent_mines() {
                     for (surrounding_x, surrounding_y) in
@@ -219,7 +227,9 @@ impl Board {
             .partition(|(x, y)| self.get_cell(*x, *y).is_some_and(|cell| cell.is_flagged()));
         // If the number of flagged cells does not match the number of adjacent mines,
         // then we do not meet the requirements for opening the unflagged cells.
-        if flagged.len() != cell.adjacent_mines().unwrap() as usize {
+        if let Some(adjacent_count) = cell.adjacent_mines()
+            && flagged.len() != adjacent_count as usize
+        {
             return;
         }
         // If we reach this point, then we open all the unflagged cells, since the
